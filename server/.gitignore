@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+*.js.map
+*.d.ts
+!jest.config.js
+uploads/*
+!uploads/.gitkeep
+vaults/*
+!vaults/.gitkeep
+coverage/
+.idea/
+.vscode/
+*.log

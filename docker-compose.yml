@@ -1,0 +1,70 @@
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    container_name: ovn-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ovwebnotes
+      POSTGRES_PASSWORD: ovwebnotes123
+      POSTGRES_DB: ovwebnotes_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ovwebnotes']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: ovn-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端 API
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: ovn-backend
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgresql://ovwebnotes:ovwebnotes123@postgres:5432/ovwebnotes_db
+      REDIS_URL: redis://redis:6379
+      PORT: 3000
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # 前端
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: ovn-frontend
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  redisdata:

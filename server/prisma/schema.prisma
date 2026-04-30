@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Note {
+  id         String       @id @default(uuid())
+  title      String
+  content    String       @default("")
+  tags       String[]
+  is_cloud   Boolean      @default(false)
+  folderPath String       @default("")
+  filePath   String       @default("")
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  attachments Attachment[]
+
+  @@index([is_cloud])
+  @@index([folderPath])
+  @@map("notes")
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  noteId    String
+  fileName  String
+  filePath  String
+  fileType  String
+  size      Int
+  is_cloud  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([noteId])
+  @@map("attachments")
+}
+
+model SyncLog {
+  id        String   @id @default(uuid())
+  status    String
+  message   String   @default("")
+  createdAt DateTime @default(now())
+
+  @@map("sync_logs")
+}
