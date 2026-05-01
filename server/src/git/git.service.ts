@@ -224,6 +224,79 @@ export class GitService {
   }
 
   /**
+   * 只拉取：从远程仓库拉取内容，不推送
+   */
+  async pullOnly(): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    try {
+      // 拉取（带 Token 认证）
+      const authRemote = await this.getAuthenticatedRemote();
+      if (authRemote) {
+        await this.git.fetch(authRemote);
+        const head = (await this.git.revparse(['--abbrev-ref', 'HEAD'])).trim();
+        await this.git.raw(['rebase', 'origin/' + head]);
+      } else {
+        await this.git.pull('origin', undefined, { '--rebase': 'true' });
+      }
+      this.logger.log('Pull completed');
+
+      return {
+        success: true,
+        message: '拉取完成',
+      };
+    } catch (error) {
+      this.logger.error(`Pull failed: ${error}`);
+      return {
+        success: false,
+        message: `拉取失败: ${error}`,
+      };
+    }
+  }
+
+  /**
+   * 自动拉取：网页加载时调用，只拉取不推送
+   */
+  async autoPull(): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    try {
+      // 检查是否有远程仓库
+      const remotes = await this.git.getRemotes(true);
+      const hasOrigin = remotes.some((r) => r.name === 'origin');
+      
+      if (!hasOrigin) {
+        this.logger.log('No remote repository configured');
+        return { success: true, message: '未配置远程仓库' };
+      }
+
+      // 拉取（带 Token 认证）
+      const authRemote = await this.getAuthenticatedRemote();
+      if (authRemote) {
+        await this.git.fetch(authRemote);
+        const head = (await this.git.revparse(['--abbrev-ref', 'HEAD'])).trim();
+        await this.git.raw(['rebase', 'origin/' + head]);
+      } else {
+        await this.git.pull('origin', undefined, { '--rebase': 'true' });
+      }
+      this.logger.log('Auto pull completed');
+
+      return {
+        success: true,
+        message: '自动拉取完成',
+      };
+    } catch (error) {
+      this.logger.error(`Auto pull failed: ${error}`);
+      return {
+        success: false,
+        message: `自动拉取失败: ${error}`,
+      };
+    }
+  }
+
+  /**
    * 强制同步：手动 pull --rebase
    */
   async forceSync(): Promise<{

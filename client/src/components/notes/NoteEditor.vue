@@ -3,12 +3,12 @@
     <!-- 编辑器工具栏 -->
     <div
       v-if="!readonly"
-      class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-vault-border"
+      class="flex items-center justify-between px-4 py-2 border-b border-warm-border dark:border-vault-border"
     >
       <input
         v-if="titleEditable"
         v-model="noteTitle"
-        class="text-lg font-semibold bg-transparent border-none outline-none text-gray-900 dark:text-vault-text flex-1"
+        class="text-lg font-semibold bg-transparent border-none outline-none text-warm-text dark:text-vault-text flex-1"
         placeholder="输入标题..."
         @blur="handleTitleBlur"
         @keydown.enter="handleTitleBlur"
@@ -24,7 +24,7 @@
     <!-- 空状态 -->
     <div
       v-if="!modelValue && readonly"
-      class="flex-1 flex items-center justify-center text-gray-400 dark:text-vault-muted"
+      class="flex-1 flex items-center justify-center text-warm-text-muted dark:text-vault-muted"
     >
       <div class="text-center">
         <svg class="w-16 h-16 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">

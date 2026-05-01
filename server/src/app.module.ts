@@ -10,6 +10,7 @@ import { GitModule } from './git/git.module';
 import { AiModule } from './ai/ai.module';
 import { IngestModule } from './ingest/ingest.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { RepositoriesModule } from './repositories/repositories.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     AiModule,
     IngestModule,
     WebhooksModule,
+    RepositoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

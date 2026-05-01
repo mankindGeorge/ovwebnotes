@@ -1,11 +1,11 @@
 <template>
   <header
-    class="h-14 flex items-center justify-between px-4 border-b border-gray-200 dark:border-vault-border bg-white dark:bg-vault-surface"
+    class="h-14 flex items-center justify-between px-4 border-b border-warm-border dark:border-vault-border bg-warm-card/95 dark:bg-vault-surface/95 backdrop-blur-sm relative z-20"
   >
     <!-- 左侧: 菜单按钮 + Logo -->
     <div class="flex items-center gap-3">
       <button
-        class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-vault-highlight transition-colors"
+        class="p-1.5 rounded-lg hover:bg-warm-hover dark:hover:bg-vault-highlight transition-colors"
         @click="appStore.toggleSidebar"
         :title="appStore.sidebarOpen ? '收起侧边栏' : '展开侧边栏'"
       >
@@ -53,7 +53,7 @@
       <StorageToggle />
       <ThemeToggle />
       <button
-        class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-vault-highlight transition-colors"
+        class="p-1.5 rounded-lg hover:bg-warm-hover dark:hover:bg-vault-highlight transition-colors"
         :title="isSettings ? '返回笔记' : '设置'"
         @click="toggleSettings"
       >

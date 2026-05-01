@@ -35,4 +35,4 @@ RUN mkdir -p /app/uploads
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npx nest start"]
+CMD ["sh", "-c", "git config --global --add safe.directory '*' && npx prisma migrate deploy && npx nest start"]

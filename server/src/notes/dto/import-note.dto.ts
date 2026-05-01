@@ -22,4 +22,9 @@ export class ImportNoteDto {
   @IsString()
   @IsOptional()
   folderPath?: string;
+
+  @ApiPropertyOptional({ description: '文件路径', example: '/uploads/123.md' })
+  @IsString()
+  @IsOptional()
+  filePath?: string;
 }

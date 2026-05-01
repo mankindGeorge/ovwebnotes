@@ -10,10 +10,17 @@
           'flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors group',
           selectedItem === item.path
             ? 'bg-obsidian-100 dark:bg-vault-highlight text-obsidian-800 dark:text-obsidian-200'
-            : 'hover:bg-gray-100 dark:hover:bg-vault-surface text-gray-700 dark:text-vault-text',
+            : 'hover:bg-warm-hover dark:hover:bg-vault-surface text-warm-text dark:text-vault-text',
+          dragOverItem === item.path && item.type === 'folder' ? 'bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-500 border-dashed' : '',
         ]"
         :style="{ paddingLeft: `${(level || 0) * 12 + 8}px` }"
+        :draggable="item.type === 'file'"
         @click="handleClick(item)"
+        @dragstart="handleDragStart($event, item)"
+        @dragover.prevent="handleDragOver($event, item)"
+        @dragleave="handleDragLeave"
+        @drop="handleDrop($event, item)"
+        @dragend="handleDragEnd"
       >
         <svg
           v-if="item.type === 'folder'"
@@ -27,7 +34,7 @@
         </svg>
         <svg
           v-else
-          class="w-4 h-4 flex-shrink-0 text-gray-400"
+          class="w-4 h-4 flex-shrink-0 text-warm-text-muted"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -46,7 +53,7 @@
         </svg>
         <span
           v-if="item.type === 'file' && item.preview"
-          class="text-xs text-gray-400 dark:text-vault-muted truncate max-w-[150px] opacity-0 group-hover:opacity-100 transition-opacity"
+          class="text-xs text-warm-text-muted dark:text-vault-muted truncate max-w-[150px] opacity-0 group-hover:opacity-100 transition-opacity"
         >
           {{ item.preview }}
         </span>
@@ -66,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent } from 'vue'
+import { ref, defineAsyncComponent } from 'vue'
 
 export interface FileTreeItem {
   name: string
@@ -87,9 +94,12 @@ defineProps<{
 const emit = defineEmits<{
   select: [item: FileTreeItem]
   toggle: [path: string]
+  move: [data: { sourcePath: string; targetFolder: string }]
 }>()
 
 const FileTree = defineAsyncComponent(() => import('./FileTree.vue'))
+
+const dragOverItem = ref<string | null>(null)
 
 function handleClick(item: FileTreeItem) {
   if (item.type === 'folder') {
@@ -97,5 +107,54 @@ function handleClick(item: FileTreeItem) {
   } else {
     emit('select', item)
   }
+}
+
+function handleDragStart(event: DragEvent, item: FileTreeItem) {
+  if (item.type === 'file') {
+    event.dataTransfer?.setData('application/json', JSON.stringify({
+      type: item.type,
+      path: item.path,
+      name: item.name,
+    }))
+    event.dataTransfer!.effectAllowed = 'move'
+  }
+}
+
+function handleDragOver(event: DragEvent, item: FileTreeItem) {
+  if (item.type === 'folder') {
+    event.preventDefault()
+    event.dataTransfer!.dropEffect = 'move'
+    dragOverItem.value = item.path
+  }
+}
+
+function handleDragLeave() {
+  dragOverItem.value = null
+}
+
+function handleDrop(event: DragEvent, target: FileTreeItem) {
+  event.preventDefault()
+  dragOverItem.value = null
+  
+  if (target.type === 'folder') {
+    const dataStr = event.dataTransfer?.getData('application/json')
+    if (dataStr) {
+      try {
+        const data = JSON.parse(dataStr)
+        if (data.type === 'file' && data.path !== target.path) {
+          emit('move', {
+            sourcePath: data.path,
+            targetFolder: target.path,
+          })
+        }
+      } catch (error) {
+        console.error('Failed to parse drag data:', error)
+      }
+    }
+  }
+}
+
+function handleDragEnd() {
+  dragOverItem.value = null
 }
 </script>

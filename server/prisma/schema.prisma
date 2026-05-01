@@ -8,19 +8,23 @@ datasource db {
 }
 
 model Note {
-  id         String       @id @default(uuid())
-  title      String
-  content    String       @default("")
-  tags       String[]
-  is_cloud   Boolean      @default(false)
-  folderPath String       @default("")
-  filePath   String       @default("")
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  attachments Attachment[]
+  id               String            @id @default(uuid())
+  title            String
+  content          String            @default("")
+  tags             String[]
+  is_cloud         Boolean           @default(false)
+  folderPath       String            @default("")
+  filePath         String            @default("")
+  repositoryId     String?
+  isFromRepository Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  attachments      Attachment[]
+  repository       RemoteRepository? @relation(fields: [repositoryId], references: [id], onDelete: SetNull)
 
   @@index([is_cloud])
   @@index([folderPath])
+  @@index([repositoryId])
   @@map("notes")
 }
 
@@ -46,4 +50,20 @@ model SyncLog {
   createdAt DateTime @default(now())
 
   @@map("sync_logs")
+}
+
+model RemoteRepository {
+  id        String   @id @default(uuid())
+  name      String
+  url       String
+  branch    String   @default("main")
+  folder    String
+  isActive  Boolean  @default(false)
+  lastSync  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  notes     Note[]
+
+  @@unique([folder])
+  @@map("remote_repositories")
 }

@@ -1,6 +1,6 @@
 <template>
   <button
-    class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-vault-highlight transition-colors"
+    class="p-1.5 rounded-lg hover:bg-warm-hover dark:hover:bg-vault-highlight transition-colors"
     :title="themeLabel"
     @click="toggleTheme"
   >
@@ -29,7 +29,7 @@
     <!-- 系统 (system) -->
     <svg
       v-else
-      class="w-5 h-5 text-gray-500"
+      class="w-5 h-5 text-warm-text-muted"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"

@@ -6,8 +6,8 @@
         ? 'px-2 py-0.5 text-xs'
         : 'px-2.5 py-0.5 text-sm',
       active
-        ? 'bg-obsidian-200 dark:bg-obsidian-800 text-obsidian-800 dark:text-obsidian-200'
-        : 'bg-gray-100 dark:bg-vault-highlight text-gray-600 dark:text-vault-muted hover:bg-gray-200 dark:hover:bg-vault-border',
+        ? 'bg-obsidian-200 dark:bg-obsidian-800 text-obsidian-800 dark:text-obsidian-200 shadow-sm'
+        : 'bg-warm-hover dark:bg-vault-highlight text-warm-text-secondary dark:text-vault-muted hover:bg-warm-active dark:hover:bg-vault-border shadow-sm hover:shadow-md transition-all duration-200',
     ]"
     @click="$emit('click')"
   >

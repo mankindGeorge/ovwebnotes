@@ -5,6 +5,7 @@ import {
   Delete,
   Param,
   Query,
+  Body,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -21,6 +22,7 @@ import { diskStorage } from 'multer';
 import * as path from 'path';
 import * as fs from 'fs';
 import { Response, Request } from 'express';
+import { MoveFileDto } from './dto/move-file.dto';
 
 const multerOptions = {
   storage: diskStorage({
@@ -103,5 +105,11 @@ export class FilesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteFile(@Param('path') filePath: string) {
     await this.filesService.deleteFile(filePath);
+  }
+
+  @Post('move')
+  @ApiOperation({ summary: '移动文件到目标文件夹' })
+  async moveFile(@Body() dto: MoveFileDto) {
+    return this.filesService.moveFile(dto.sourcePath, dto.targetFolder, dto.repositoryId);
   }
 }

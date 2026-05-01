@@ -17,6 +17,12 @@ export const useAppStore = defineStore('app', () => {
   const storageMode = ref<StorageMode>(
     (localStorage.getItem(STORAGE_KEY) as StorageMode) || 'vault'
   )
+  
+  // Git仓库编辑限制开关
+  const allowEditRepositoryNotes = ref(
+    localStorage.getItem('obsidian-notes-allow-edit-repo') !== 'false'
+  )
+  
   const systemDark = ref(
     typeof window !== 'undefined'
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -83,6 +89,11 @@ export const useAppStore = defineStore('app', () => {
     setStorageMode(storageMode.value === 'vault' ? 'cloud' : 'vault')
   }
 
+  function setAllowEditRepositoryNotes(allow: boolean) {
+    allowEditRepositoryNotes.value = allow
+    localStorage.setItem('obsidian-notes-allow-edit-repo', String(allow))
+  }
+
   // 监听系统主题变化
   if (typeof window !== 'undefined') {
     window
@@ -101,6 +112,7 @@ export const useAppStore = defineStore('app', () => {
     sidebarOpen,
     storageMode,
     isMobile,
+    allowEditRepositoryNotes,
     // Getters
     isDark,
     isCloudMode,
@@ -112,5 +124,6 @@ export const useAppStore = defineStore('app', () => {
     setSidebarOpen,
     setStorageMode,
     toggleStorageMode,
+    setAllowEditRepositoryNotes,
   }
 })

@@ -137,4 +137,49 @@ export class FilesService {
     };
     return mimeMap[ext] || 'application/octet-stream';
   }
+
+  /**
+   * 移动文件到目标文件夹
+   */
+  async moveFile(sourcePath: string, targetFolder: string, repositoryId?: string): Promise<{
+    success: boolean;
+    newPath: string;
+  }> {
+    const resolvedSource = this.resolveSafePath(sourcePath);
+    
+    // 确定目标路径
+    let targetBasePath: string;
+    if (repositoryId) {
+      // 如果指定了仓库，移动到仓库目录
+      targetBasePath = path.resolve('./repositories', targetFolder);
+    } else {
+      // 否则移动到 uploads 目录下的目标文件夹
+      targetBasePath = path.join(this.uploadDir, targetFolder);
+    }
+
+    // 确保目标文件夹存在
+    await fs.mkdir(targetBasePath, { recursive: true });
+
+    const fileName = path.basename(resolvedSource);
+    const targetPath = path.join(targetBasePath, fileName);
+
+    // 检查源文件是否存在
+    try {
+      await fs.access(resolvedSource);
+    } catch {
+      throw new NotFoundException(`Source file not found: ${sourcePath}`);
+    }
+
+    // 移动文件
+    try {
+      await fs.rename(resolvedSource, targetPath);
+      return {
+        success: true,
+        newPath: targetPath,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to move file: ${error}`);
+      throw error;
+    }
+  }
 }

@@ -2,7 +2,7 @@
   <div class="relative">
     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
       <svg
-        class="w-4 h-4 text-gray-400 dark:text-vault-muted"
+        class="w-4 h-4 text-warm-text-muted dark:text-vault-muted"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -19,14 +19,14 @@
       v-model="keyword"
       type="text"
       placeholder="搜索笔记..."
-      class="w-full pl-9 pr-4 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-vault-border bg-gray-50 dark:bg-vault-highlight text-gray-900 dark:text-vault-text placeholder-gray-400 dark:placeholder-vault-muted focus:outline-none focus:ring-2 focus:ring-obsidian-500 dark:focus:ring-obsidian-400 focus:border-transparent transition-colors"
+      class="w-full pl-9 pr-4 py-1.5 text-sm rounded-lg border border-warm-border dark:border-vault-border bg-warm-surface dark:bg-vault-highlight text-warm-text dark:text-vault-text placeholder-warm-text-muted dark:placeholder-vault-muted focus:outline-none focus:ring-2 focus:ring-obsidian-500 dark:focus:ring-obsidian-400 focus:border-transparent transition-colors"
       @input="handleInput"
       @keydown.escape="handleClear"
     />
     <!-- 清除按钮 -->
     <button
       v-if="keyword"
-      class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-vault-text"
+      class="absolute inset-y-0 right-0 pr-3 flex items-center text-warm-text-muted hover:text-warm-text dark:hover:text-vault-text"
       @click="handleClear"
     >
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

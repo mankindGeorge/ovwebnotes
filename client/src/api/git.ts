@@ -6,14 +6,14 @@ export function getGitStatus() {
   return apiClient.get<ApiResponse<GitStatus>>('/git/status')
 }
 
-/** 强制同步 */
+/** 强制同步（只拉取，不推送） */
 export function forceSync() {
-  return apiClient.post<ApiResponse<SyncResult>>('/git/sync')
+  return apiClient.post<ApiResponse<SyncResult>>('/git/pull')
 }
 
-/** 手动触发自动同步 */
+/** 手动触发自动同步（只拉取） */
 export function autoSync() {
-  return apiClient.post<ApiResponse<SyncResult>>('/git/auto-sync')
+  return apiClient.post<ApiResponse<SyncResult>>('/git/auto-pull')
 }
 
 /** 获取远程仓库地址 */
@@ -44,4 +44,14 @@ export function removeGitToken() {
 /** 初始化 Git 仓库 */
 export function initGitRepo() {
   return apiClient.post<ApiResponse<{ success: boolean; message: string }>>('/git/init')
+}
+
+/** 获取GitHub镜像配置 */
+export function getMirrorConfig() {
+  return apiClient.get<ApiResponse<{ enabled: boolean; url: string }>>('/git/mirror')
+}
+
+/** 保存GitHub镜像配置 */
+export function saveMirrorConfig(enabled: boolean, url: string) {
+  return apiClient.post<ApiResponse<{ success: boolean }>>('/git/mirror', { enabled, url })
 }

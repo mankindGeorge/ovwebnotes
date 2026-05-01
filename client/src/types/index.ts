@@ -9,6 +9,8 @@ export interface Note {
   filePath: string
   createdAt: string
   updatedAt: string
+  repositoryId?: string  // 如果笔记来自git仓库，存储仓库ID
+  isFromRepository?: boolean  // 标记是否来自git仓库
 }
 
 /** 创建笔记 DTO */

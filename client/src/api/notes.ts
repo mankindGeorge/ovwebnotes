@@ -59,7 +59,7 @@ export function exportNote(id: string) {
 }
 
 /** 上传：本地笔记 → 云端数据库 */
-export function importNote(filePath: string, data?: { title: string; content: string; tags: string[]; folderPath: string }) {
+export function importNote(filePath: string, data?: { title: string; content: string; tags: string[]; folderPath: string; filePath?: string }) {
   return apiClient.post<ApiResponse<Note>>(`/notes/${encodeURIComponent(filePath)}/import`, data)
 }
 

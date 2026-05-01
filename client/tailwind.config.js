@@ -30,6 +30,18 @@ export default {
           accent: '#cba6f7',
           highlight: '#45475a',
         },
+        warm: {
+          bg: '#fefaf6',
+          surface: '#fdf5ed',
+          card: '#fffbf7',
+          border: '#e8ddd0',
+          'border-light': '#f0e6d9',
+          text: '#4a3f35',
+          'text-secondary': '#6b5d52',
+          'text-muted': '#9a8b7f',
+          hover: '#f5ede3',
+          active: '#ebe3d9',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],

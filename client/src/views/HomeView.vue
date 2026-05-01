@@ -6,16 +6,16 @@
       class="flex-1 flex items-center justify-center"
     >
       <div class="text-center max-w-md px-4">
-        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-vault-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-16 h-16 mx-auto mb-4 text-warm-border dark:text-vault-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
         </svg>
-        <h3 class="text-lg font-medium text-gray-700 dark:text-vault-text mb-2">未连接本地目录</h3>
-        <p class="text-sm text-gray-500 dark:text-vault-muted mb-4">
+        <h3 class="text-lg font-medium text-warm-text dark:text-vault-text mb-2">未连接本地目录</h3>
+        <p class="text-sm text-warm-text-muted dark:text-vault-muted mb-4">
           选择一个本地文件夹作为笔记存储目录，笔记将以 .md 文件形式保存在你的电脑上。
         </p>
         <button
           v-if="localVaultStore.supported"
-          class="px-4 py-2 bg-obsidian-600 text-white rounded-lg hover:bg-obsidian-700 transition-colors text-sm font-medium"
+          class="px-4 py-2 bg-obsidian-600 text-white rounded-lg hover:bg-obsidian-700 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
           @click="handlePickDirectory"
         >
           选择本地目录
@@ -35,12 +35,12 @@
         <svg class="w-16 h-16 mx-auto mb-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
         </svg>
-        <h3 class="text-lg font-medium text-gray-700 dark:text-vault-text mb-2">需要授权访问</h3>
-        <p class="text-sm text-gray-500 dark:text-vault-muted mb-4">
+        <h3 class="text-lg font-medium text-warm-text dark:text-vault-text mb-2">需要授权访问</h3>
+        <p class="text-sm text-warm-text-muted dark:text-vault-muted mb-4">
           {{ localVaultStore.error }}
         </p>
         <button
-          class="px-4 py-2 bg-obsidian-600 text-white rounded-lg hover:bg-obsidian-700 transition-colors text-sm font-medium"
+          class="px-4 py-2 bg-obsidian-600 text-white rounded-lg hover:bg-obsidian-700 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
           @click="handleReconnect"
         >
           重新授权
@@ -57,12 +57,13 @@
           :key="getNoteKey(currentNote)"
           v-model="editorContent"
           :note-title="currentNote.title"
-          :title-editable="true"
+          :title-editable="canEditNote"
+          :readonly="!canEditNote"
           @update:note-title="handleTitleUpdate"
         />
         <div
           v-else
-          class="h-full flex items-center justify-center text-gray-400 dark:text-vault-muted"
+          class="h-full flex items-center justify-center text-warm-text-muted dark:text-vault-muted"
         >
           <div class="text-center">
             <svg
@@ -88,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '@/stores/notes'
 import { useAppStore } from '@/stores/app'
@@ -112,6 +113,21 @@ let lastSavedContent = ''
 /** 当前是否为本地模式 */
 const isLocalMode = () => !appStore.isCloudMode
 
+/** 检查当前笔记是否可编辑 */
+const canEditNote = computed(() => {
+  if (!currentNote.value) return false
+  
+  // 本地模式：总是可编辑
+  if (isLocalMode()) return true
+  
+  // 云端模式：
+  // 1. 如果不是来自仓库，总是可编辑
+  if (!currentNote.value.isFromRepository) return true
+  
+  // 2. 如果来自仓库，检查用户是否允许编辑
+  return appStore.allowEditRepositoryNotes
+})
+
 /** 生成笔记的唯一 key（用于 Vditor 重新挂载） */
 function getNoteKey(note: Note): string {
   return `${note.is_cloud ? 'cloud' : 'vault'}:${getNoteIdentifier(note)}`
@@ -124,6 +140,12 @@ function getNoteKey(note: Note): string {
  */
 async function saveNote(note: Note, content: string): Promise<boolean> {
   if (!note || isSaving) return false
+  
+  // 检查编辑权限
+  if (!isLocalMode() && note.isFromRepository && !appStore.allowEditRepositoryNotes) {
+    console.warn('仓库笔记不可编辑')
+    return false
+  }
 
   isSaving = true
   try {
@@ -228,6 +250,13 @@ watch(editorContent, (newContent) => {
 async function handleTitleUpdate(title: string) {
   const note = currentNote.value
   if (!note) return
+  
+  // 检查编辑权限
+  if (!isLocalMode() && note.isFromRepository && !appStore.allowEditRepositoryNotes) {
+    console.warn('仓库笔记不可编辑')
+    return
+  }
+  
   try {
     if (isLocalMode()) {
       // 本地模式：重命名文件

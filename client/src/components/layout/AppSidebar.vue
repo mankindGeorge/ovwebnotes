@@ -1,21 +1,21 @@
 <template>
   <aside
     :class="[
-      'w-64 border-r border-gray-200 dark:border-vault-border bg-gray-50 dark:bg-vault-surface transition-all duration-300 overflow-y-auto',
+      'w-64 border-r border-warm-border dark:border-vault-border bg-warm-surface/95 dark:bg-vault-surface/95 backdrop-blur-sm transition-all duration-300 overflow-y-auto relative',
       appStore.sidebarOpen ? 'flex-shrink-0 translate-x-0' : 'flex-shrink-0 -translate-x-full lg:hidden',
     ]"
   >
-    <div class="p-4">
+    <div class="p-4 relative z-10">
       <!-- 当前存储模式标识 -->
       <div class="flex items-center gap-2 mb-3 px-1">
         <span
-          :class="[
-            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
-            appStore.isCloudMode
-              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-              : 'bg-obsidian-100 dark:bg-obsidian-900/30 text-obsidian-700 dark:text-obsidian-300',
-          ]"
-        >
+            :class="[
+              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
+              appStore.isCloudMode
+                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                : 'bg-obsidian-100 dark:bg-obsidian-900/30 text-obsidian-700 dark:text-obsidian-300',
+            ]"
+          >
           <svg v-if="appStore.isCloudMode" class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
             <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" />
           </svg>
@@ -29,7 +29,7 @@
       <!-- 新建按钮 -->
       <div class="flex items-center gap-1 mb-4">
         <button
-          class="flex-1 flex items-center justify-center px-3 py-2 rounded-lg bg-obsidian-600 hover:bg-obsidian-700 text-white transition-colors"
+          class="flex-1 flex items-center justify-center px-3 py-2 rounded-lg bg-obsidian-600 hover:bg-obsidian-700 text-white transition-all duration-200 shadow-sm hover:shadow-md"
           title="新建笔记"
           @click="handleCreateNote"
         >
@@ -38,7 +38,7 @@
           </svg>
         </button>
         <button
-          class="flex-1 flex items-center justify-center px-3 py-2 rounded-lg bg-gray-200 dark:bg-vault-highlight hover:bg-gray-300 dark:hover:bg-vault-border text-gray-700 dark:text-vault-text transition-colors"
+          class="flex-1 flex items-center justify-center px-3 py-2 rounded-lg bg-warm-hover dark:bg-vault-highlight hover:bg-warm-active dark:hover:bg-vault-border text-warm-text dark:text-vault-text transition-all duration-200 shadow-sm hover:shadow-md border border-warm-border-light dark:border-vault-border"
           title="新建文件夹"
           @click="handleCreateFolder"
         >
@@ -50,7 +50,7 @@
 
       <!-- 文件管理 -->
       <div class="space-y-1">
-        <div class="text-xs font-semibold text-gray-500 dark:text-vault-muted uppercase tracking-wider mb-2">
+        <div class="text-xs font-semibold text-warm-text-muted dark:text-vault-muted uppercase tracking-wider mb-2">
           文件管理
         </div>
 
@@ -61,12 +61,13 @@
           :expanded-folders="expandedFolders"
           @select="handleFileSelect"
           @toggle="handleFolderToggle"
+          @move="handleFileMove"
         />
       </div>
 
       <!-- 标签过滤 -->
       <div class="mt-6">
-        <div class="text-xs font-semibold text-gray-500 dark:text-vault-muted uppercase tracking-wider mb-2">
+        <div class="text-xs font-semibold text-warm-text-muted dark:text-vault-muted uppercase tracking-wider mb-2">
           标签
         </div>
         <div class="flex flex-wrap gap-1.5">
@@ -82,14 +83,14 @@
 
       <!-- 数据同步区域 -->
       <div class="mt-6">
-        <div class="text-xs font-semibold text-gray-500 dark:text-vault-muted uppercase tracking-wider mb-2">
+        <div class="text-xs font-semibold text-warm-text-muted dark:text-vault-muted uppercase tracking-wider mb-2">
           数据同步
         </div>
         <div class="space-y-2">
           <!-- 数据同步 -->
           <div class="relative">
             <button
-              class="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all duration-200 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="syncing"
               @click="showSyncMenu = !showSyncMenu"
             >
@@ -104,10 +105,10 @@
             <!-- 下拉菜单 -->
             <div
               v-if="showSyncMenu"
-              class="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-vault-bg border border-gray-200 dark:border-vault-border rounded-lg shadow-lg z-50 overflow-hidden"
+              class="absolute left-0 right-0 top-full mt-1 bg-warm-card/95 dark:bg-vault-bg/95 backdrop-blur-md border border-warm-border dark:border-vault-border rounded-lg shadow-xl z-50 overflow-hidden"
             >
               <button
-                class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 dark:text-vault-text hover:bg-gray-50 dark:hover:bg-vault-highlight transition-colors text-left"
+                class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-warm-text dark:text-vault-text hover:bg-warm-hover dark:hover:bg-vault-highlight transition-colors text-left"
                 @click="handleSelectFiles"
               >
                 <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,16 +117,16 @@
                 上传文件到云端
               </button>
               <button
-                class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 dark:text-vault-text hover:bg-gray-50 dark:hover:bg-vault-highlight transition-colors text-left border-t border-gray-100 dark:border-vault-border"
+                class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-warm-text dark:text-vault-text hover:bg-warm-hover dark:hover:bg-vault-highlight transition-colors text-left border-t border-warm-border-light dark:border-vault-border"
                 @click="handleSelectFolder"
               >
-                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-ocean-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 上传文件夹到云端
               </button>
               <button
-                class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 dark:text-vault-text hover:bg-gray-50 dark:hover:bg-vault-highlight transition-colors text-left border-t border-gray-100 dark:border-vault-border"
+                class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-warm-text dark:text-vault-text hover:bg-warm-hover dark:hover:bg-vault-highlight transition-colors text-left border-t border-warm-border-light dark:border-vault-border"
                 @click="handleDownloadNote"
               >
                 <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,7 +147,7 @@
 
       <!-- Vault 切换 -->
       <div class="mt-6">
-        <div class="text-xs font-semibold text-gray-500 dark:text-vault-muted uppercase tracking-wider mb-2">
+        <div class="text-xs font-semibold text-warm-text-muted dark:text-vault-muted uppercase tracking-wider mb-2">
           Vault
         </div>
         <div class="space-y-1">
@@ -162,13 +163,13 @@
               <span class="truncate">{{ localVaultStore.activeVault.name }}</span>
               <span class="ml-auto text-xs text-green-500">已连接</span>
             </div>
-            <p v-else class="text-xs text-gray-400 dark:text-vault-muted px-3">
+            <p v-else class="text-xs text-warm-text-muted dark:text-vault-muted px-3">
               未连接本地目录
             </p>
           </template>
           <!-- 云端模式 -->
           <template v-else>
-            <p class="text-xs text-gray-400 dark:text-vault-muted px-3">
+            <p class="text-xs text-warm-text-muted dark:text-vault-muted px-3">
               云端模式
             </p>
           </template>
@@ -181,6 +182,40 @@
       </div>
     </div>
   </aside>
+
+  <!-- 新建文件夹模态框 -->
+  <div v-if="showFolderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showFolderModal = false">
+    <div class="bg-warm-card dark:bg-vault-surface rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+      <h3 class="text-lg font-semibold text-warm-text dark:text-vault-text mb-4">新建文件夹</h3>
+      
+      <div>
+        <label class="block text-sm font-medium text-warm-text dark:text-vault-text mb-1">文件夹名称</label>
+        <input
+          v-model="newFolderName"
+          type="text"
+          placeholder="请输入文件夹名称"
+          class="w-full px-3 py-2 text-sm rounded-lg border border-warm-border dark:border-vault-border bg-warm-surface dark:bg-vault-surface text-warm-text dark:text-vault-text"
+          @keyup.enter="confirmCreateFolder"
+        />
+      </div>
+
+      <div class="flex items-center justify-end gap-2 mt-6">
+        <button
+          class="px-4 py-2 text-sm font-medium rounded-lg border border-warm-border dark:border-vault-border text-warm-text dark:text-vault-text hover:bg-warm-hover dark:hover:bg-vault-highlight transition-colors"
+          @click="showFolderModal = false"
+        >
+          取消
+        </button>
+        <button
+          class="px-4 py-2 text-sm font-medium rounded-lg bg-obsidian-600 hover:bg-obsidian-700 text-white transition-colors disabled:opacity-50"
+          :disabled="!newFolderName.trim()"
+          @click="confirmCreateFolder"
+        >
+          创建
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -207,6 +242,8 @@ const uploadFolderInput = ref<HTMLInputElement | null>(null)
 const showSyncMenu = ref(false)
 const expandedFolders = ref(new Set<string>())
 const selectedFile = ref<string | undefined>()
+const showFolderModal = ref(false)
+const newFolderName = ref('')
 
 
 // 从笔记中提取文件夹结构
@@ -351,9 +388,15 @@ function toggleTag(tag: string) {
 }
 
 async function handleCreateFolder() {
-  const name = prompt('请输入文件夹名称')
-  if (!name || !name.trim()) return
-  const folderName = name.trim()
+  newFolderName.value = ''
+  showFolderModal.value = true
+}
+
+async function confirmCreateFolder() {
+  const folderName = newFolderName.value.trim()
+  if (!folderName) return
+  
+  showFolderModal.value = false
 
   if (!appStore.isCloudMode && localVaultStore.isConnected) {
     // 本地模式：在 File System API 中创建目录
@@ -427,6 +470,39 @@ async function handleCreateNote() {
     }
   } catch {
     // 错误已在 store 中处理
+  }
+}
+
+/** 处理文件拖拽移动 */
+async function handleFileMove(data: { sourcePath: string; targetFolder: string }) {
+  try {
+    const { filesApi } = await import('@/api/repositories')
+    await filesApi.move({
+      sourcePath: data.sourcePath,
+      targetFolder: data.targetFolder,
+    })
+    
+    // 刷新笔记列表
+    if (!appStore.isCloudMode && localVaultStore.isConnected) {
+      await localVaultStore.loadNotes()
+      const localNotes = localVaultStore.notes.map((ln) => ({
+        id: ln.path,
+        title: ln.name.replace(/\.md$/, ''),
+        content: ln.preview || ln.content || '',
+        tags: [],
+        is_cloud: false,
+        folderPath: ln.path.includes('/') ? '/' + ln.path.substring(0, ln.path.lastIndexOf('/')) : '/',
+        filePath: ln.path,
+        createdAt: new Date(ln.lastModified).toISOString(),
+        updatedAt: new Date(ln.lastModified).toISOString(),
+      }))
+      notesStore.setNotes(localNotes)
+    } else {
+      await notesStore.fetchNotes({ is_cloud: true })
+    }
+  } catch (error: any) {
+    console.error('移动文件失败:', error)
+    alert(`移动文件失败: ${error.response?.data?.message || error.message}`)
   }
 }
 
@@ -591,28 +667,46 @@ async function handleFileUpload(event: Event) {
   try {
     for (const file of files) {
       try {
-        const content = await readFileContent(file)
-        const title = file.name.replace(/\.(md|markdown)$/, '')
-        // 从 webkitRelativePath 提取文件夹（如果有）
-        const relativePath = (file as any).webkitRelativePath || file.name
-        const pathParts = relativePath.split('/')
-        const folderPath = pathParts.length > 1 ? '/' + pathParts.slice(0, -1).join('/') : '/'
-
-        await notesApi.importNote(file.name, {
-          title,
-          content,
-          tags: [],
-          folderPath,
+        // 上传文件到 uploads 文件夹
+        const formData = new FormData()
+        formData.append('file', file)
+        
+        const response = await fetch('/api/files/upload?is_cloud=true', {
+          method: 'POST',
+          body: formData,
         })
+        
+        if (!response.ok) throw new Error('Upload failed')
+        
+        const uploadResult = await response.json()
+        
+        // 如果是 Markdown 文件，创建笔记记录
+        if (file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
+          const content = await readFileContent(file)
+          const title = file.name.replace(/\.(md|markdown)$/, '')
+          const relativePath = (file as any).webkitRelativePath || file.name
+          const pathParts = relativePath.split('/')
+          const folderPath = pathParts.length > 1 ? '/' + pathParts.slice(0, -1).join('/') : '/'
+          
+          await notesApi.importNote(file.name, {
+            title,
+            content,
+            tags: [],
+            folderPath,
+            filePath: uploadResult.filePath,
+          })
+        }
+        
         successCount++
-      } catch {
+      } catch (err) {
+        console.error('上传文件失败:', err)
         failCount++
       }
     }
 
     syncSuccess.value = failCount === 0
     syncMessage.value = failCount === 0
-      ? `已上传 ${successCount} 个文件`
+      ? `已上传 ${successCount} 个文件到 uploads 文件夹`
       : `上传完成：成功 ${successCount}，失败 ${failCount}`
 
     if (appStore.isCloudMode) {
@@ -623,7 +717,6 @@ async function handleFileUpload(event: Event) {
     syncMessage.value = err.message || '上传失败'
   } finally {
     syncing.value = false
-    // 重置 input 以允许重复选择同一文件
     input.value = ''
   }
 }
@@ -645,28 +738,43 @@ async function handleFolderUpload(event: Event) {
       if (!file.name.match(/\.(md|markdown)$/i)) continue
 
       try {
+        // 上传文件到 uploads 文件夹
+        const formData = new FormData()
+        formData.append('file', file)
+        
+        const response = await fetch('/api/files/upload?is_cloud=true', {
+          method: 'POST',
+          body: formData,
+        })
+        
+        if (!response.ok) throw new Error('Upload failed')
+        
+        const uploadResult = await response.json()
+        
+        // 创建笔记记录
         const content = await readFileContent(file)
         const title = file.name.replace(/\.(md|markdown)$/, '')
         const relativePath = (file as any).webkitRelativePath || ''
         const pathParts = relativePath.split('/')
-        // webkitRelativePath 格式: "folderName/sub/file.md"，取第一个目录名作为 folderPath
         const folderPath = pathParts.length > 1 ? '/' + pathParts.slice(0, -1).join('/') : '/'
-
+        
         await notesApi.importNote(relativePath || file.name, {
           title,
           content,
           tags: [],
           folderPath,
+          filePath: uploadResult.filePath,
         })
         successCount++
-      } catch {
+      } catch (err) {
+        console.error('上传文件失败:', err)
         failCount++
       }
     }
 
     syncSuccess.value = failCount === 0
     syncMessage.value = failCount === 0
-      ? `已上传 ${successCount} 篇笔记`
+      ? `已上传 ${successCount} 篇笔记到 uploads 文件夹`
       : `上传完成：成功 ${successCount}，失败 ${failCount}`
 
     if (appStore.isCloudMode) {

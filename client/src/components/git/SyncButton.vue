@@ -3,8 +3,8 @@
     :class="[
       'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200',
       syncing
-        ? 'bg-gray-100 dark:bg-vault-highlight text-gray-400 dark:text-vault-muted cursor-wait'
-        : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50',
+        ? 'bg-warm-hover dark:bg-vault-highlight text-warm-text-muted dark:text-vault-muted cursor-wait'
+        : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50 shadow-sm hover:shadow-md transition-all duration-200',
     ]"
     :disabled="syncing"
     @click="handleSync"

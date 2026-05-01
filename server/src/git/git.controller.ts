@@ -1,11 +1,33 @@
 import { Controller, Get, Post, Delete, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { GitService } from './git.service';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 @ApiTags('Git')
 @Controller('api/git')
 export class GitController {
   constructor(private readonly gitService: GitService) {}
+
+  @Get('mirror')
+  @ApiOperation({ summary: '获取GitHub镜像配置' })
+  async getMirror() {
+    try {
+      const configPath = path.join(path.resolve('./vaults'), '.mirror-config.json');
+      const config = await fs.readFile(configPath, 'utf-8');
+      return { data: JSON.parse(config) };
+    } catch {
+      return { data: { enabled: false, url: 'gh-proxy.com' } };
+    }
+  }
+
+  @Post('mirror')
+  @ApiOperation({ summary: '保存GitHub镜像配置' })
+  async saveMirror(@Body() body: { enabled: boolean; url: string }) {
+    const configPath = path.join(path.resolve('./vaults'), '.mirror-config.json');
+    await fs.writeFile(configPath, JSON.stringify(body, null, 2));
+    return { data: { success: true } };
+  }
 
   @Get('status')
   @ApiOperation({ summary: '获取 Git 仓库状态' })
@@ -47,6 +69,18 @@ export class GitController {
   @ApiOperation({ summary: '强制同步 (pull --rebase)' })
   forceSync() {
     return this.gitService.forceSync();
+  }
+
+  @Post('pull')
+  @ApiOperation({ summary: '拉取远程仓库内容（只读）' })
+  pullOnly() {
+    return this.gitService.pullOnly();
+  }
+
+  @Post('auto-pull')
+  @ApiOperation({ summary: '自动拉取（网页加载时调用）' })
+  autoPull() {
+    return this.gitService.autoPull();
   }
 
   @Post('auto-sync')
