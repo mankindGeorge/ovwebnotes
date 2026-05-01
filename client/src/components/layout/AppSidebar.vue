@@ -48,19 +48,19 @@
         </button>
       </div>
 
-      <!-- 分类树 -->
+      <!-- 文件管理 -->
       <div class="space-y-1">
         <div class="text-xs font-semibold text-gray-500 dark:text-vault-muted uppercase tracking-wider mb-2">
-          分类
+          文件管理
         </div>
 
-        <!-- 文件夹列表 -->
-        <FolderTreeItem
-          v-for="folder in folders"
-          :key="folder.path"
-          :folder="folder"
-          :selected="notesStore.selectedFolder === folder.path"
-          @select="selectFolder(folder.path)"
+        <!-- 文件树 -->
+        <FileTree
+          :items="fileTreeItems"
+          :selected-item="selectedFile"
+          :expanded-folders="expandedFolders"
+          @select="handleFileSelect"
+          @toggle="handleFolderToggle"
         />
       </div>
 
@@ -190,10 +190,9 @@ import { useNotesStore } from '@/stores/notes'
 import { useLocalVaultStore } from '@/stores/localVault'
 import { useNotes } from '@/composables/useNotes'
 import TagBadge from '@/components/common/TagBadge.vue'
-import FolderTreeItem from '@/components/common/FolderTreeItem.vue'
+import FileTree, { type FileTreeItem } from '@/components/common/FileTree.vue'
 import GitStatus from '@/components/git/GitStatus.vue'
 import * as notesApi from '@/api/notes'
-import type { FolderNode } from '@/types'
 
 const appStore = useAppStore()
 const notesStore = useNotesStore()
@@ -206,6 +205,8 @@ const syncSuccess = ref(false)
 const uploadFileInput = ref<HTMLInputElement | null>(null)
 const uploadFolderInput = ref<HTMLInputElement | null>(null)
 const showSyncMenu = ref(false)
+const expandedFolders = ref(new Set<string>())
+const selectedFile = ref<string | undefined>()
 
 
 // 从笔记中提取文件夹结构
@@ -236,50 +237,101 @@ async function loadLocalSubDirs() {
   }
 }
 
-const folders = computed(() => {
-  const folderMap = new Map<string, FolderNode>()
+const fileTreeItems = computed((): FileTreeItem[] => {
+  const tree: FileTreeItem[] = []
+  const folderMap = new Map<string, FileTreeItem>()
 
-  // 从笔记中提取有笔记的文件夹
   notesStore.notes.forEach((note) => {
-    const path = note.folderPath || '/'
-    if (path === '/' || !path) return
-    const cleanPath = path.startsWith('/') ? path.substring(1) : path
-    // 跳过隐藏文件夹（以 . 开头）
-    const topFolder = cleanPath.split('/')[0]
-    if (topFolder.startsWith('.')) return
-    if (!folderMap.has(cleanPath)) {
-      const parts = cleanPath.split('/')
-      const name = parts[parts.length - 1] || cleanPath
-      folderMap.set(cleanPath, { name, path: '/' + cleanPath, children: [], noteCount: 0 })
+    const filePath = note.filePath || note.id
+    const fileName = note.title || '未命名笔记'
+    const folderPath = note.folderPath || '/'
+    
+    if (folderPath === '/' || !folderPath) {
+      tree.push({
+        name: fileName,
+        path: filePath,
+        type: 'file',
+        preview: note.content && note.content.length < 100 ? note.content.substring(0, 50) : undefined,
+        is_cloud: note.is_cloud,
+      })
+    } else {
+      const cleanFolderPath = folderPath.startsWith('/') ? folderPath.substring(1) : folderPath
+      const parts = cleanFolderPath.split('/')
+      
+      let currentPath = ''
+      parts.forEach((part, index) => {
+        const parentPath = currentPath
+        currentPath = currentPath ? `${currentPath}/${part}` : part
+        
+        if (!folderMap.has(currentPath)) {
+          const folderItem: FileTreeItem = {
+            name: part,
+            path: currentPath,
+            type: 'folder',
+            children: [],
+          }
+          folderMap.set(currentPath, folderItem)
+          
+          if (index === 0) {
+            if (!tree.find(item => item.path === currentPath)) {
+              tree.push(folderItem)
+            }
+          } else {
+            const parent = folderMap.get(parentPath)
+            if (parent && parent.children && !parent.children.find(item => item.path === currentPath)) {
+              parent.children.push(folderItem)
+            }
+          }
+        }
+      })
+      
+      const folder = folderMap.get(cleanFolderPath)
+      if (folder && folder.children) {
+        folder.children.push({
+          name: fileName,
+          path: filePath,
+          type: 'file',
+          preview: note.content && note.content.length < 100 ? note.content.substring(0, 50) : undefined,
+          is_cloud: note.is_cloud,
+        })
+      }
     }
-    folderMap.get(cleanPath)!.noteCount++
   })
 
-  // 本地模式下，补充空文件夹（仅顶级）
-  if (!appStore.isCloudMode) {
-    localSubDirs.value.forEach((dir) => {
-      // 只添加顶级文件夹（不含子路径），跳过隐藏文件夹
-      if (dir.includes('/')) return
-      if (dir.startsWith('.')) return
-      if (!folderMap.has(dir)) {
-        const parts = dir.split('/')
-        const name = parts[parts.length - 1] || dir
-        folderMap.set(dir, { name, path: '/' + dir, children: [], noteCount: 0 })
+  const sortItems = (items: FileTreeItem[]) => {
+    items.sort((a, b) => {
+      if (a.type !== b.type) {
+        return a.type === 'folder' ? -1 : 1
+      }
+      return a.name.localeCompare(b.name)
+    })
+    items.forEach(item => {
+      if (item.children) {
+        sortItems(item.children)
       }
     })
   }
-
-  // 只返回顶级文件夹
-  return Array.from(folderMap.values())
-    .filter((f) => {
-      const cleanPath = f.path.startsWith('/') ? f.path.substring(1) : f.path
-      return !cleanPath.includes('/')
-    })
-    .sort((a, b) => a.path.localeCompare(b.path))
+  
+  sortItems(tree)
+  return tree
 })
 
-function selectFolder(path: string) {
-  notesStore.selectedFolder = path
+function handleFileSelect(item: FileTreeItem) {
+  if (item.type === 'file') {
+    selectedFile.value = item.path
+    const note = notesStore.notes.find(n => (n.filePath || n.id) === item.path)
+    if (note) {
+      notesStore.setCurrentNote(note)
+    }
+  }
+}
+
+function handleFolderToggle(path: string) {
+  if (expandedFolders.value.has(path)) {
+    expandedFolders.value.delete(path)
+  } else {
+    expandedFolders.value.add(path)
+  }
 }
 
 // 本地模式切换或 vault 变化时，重新扫描目录结构

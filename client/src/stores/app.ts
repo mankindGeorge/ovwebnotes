@@ -12,7 +12,7 @@ export const useAppStore = defineStore('app', () => {
     (localStorage.getItem(THEME_KEY) as ThemeMode) || 'system'
   )
   const sidebarOpen = ref(
-    localStorage.getItem(SIDEBAR_KEY) !== 'false'
+    localStorage.getItem(SIDEBAR_KEY) === null ? true : localStorage.getItem(SIDEBAR_KEY) !== 'false'
   )
   const storageMode = ref<StorageMode>(
     (localStorage.getItem(STORAGE_KEY) as StorageMode) || 'vault'
@@ -20,6 +20,13 @@ export const useAppStore = defineStore('app', () => {
   const systemDark = ref(
     typeof window !== 'undefined'
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : false
+  )
+
+  const isMobile = ref(
+    typeof window !== 'undefined'
+      ? /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        ('ontouchstart' in window && window.innerWidth < 1024)
       : false
   )
 
@@ -93,6 +100,7 @@ export const useAppStore = defineStore('app', () => {
     themeMode,
     sidebarOpen,
     storageMode,
+    isMobile,
     // Getters
     isDark,
     isCloudMode,

@@ -7,6 +7,7 @@ import {
   verifyPermission,
   listMarkdownFiles,
   readFile,
+  readFilePreview,
   writeFile,
   deleteFile,
   createNote,
@@ -28,6 +29,7 @@ export const useLocalVaultStore = defineStore('localVault', () => {
   const notes = ref<LocalNote[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const initialized = ref(false)
 
   const activeVault = computed(() =>
     vaults.value.find((v) => v.id === activeVaultId.value) || null
@@ -42,6 +44,7 @@ export const useLocalVaultStore = defineStore('localVault', () => {
 
   /** 初始化：从 IndexedDB 恢复已保存的目录句柄 */
   async function init() {
+    if (initialized.value) return
     if (!isFileSystemSupported()) return
 
     // 恢复保存的 vault 列表
@@ -50,6 +53,9 @@ export const useLocalVaultStore = defineStore('localVault', () => {
       try {
         const list: { id: string; name: string }[] = JSON.parse(saved)
         for (const item of list) {
+          // 检查是否已存在
+          if (vaults.value.some((v) => v.id === item.id)) continue
+          
           const handle = await loadDirectoryHandle(item.id)
           if (handle) {
             const permitted = await verifyPermission(handle)
@@ -71,6 +77,8 @@ export const useLocalVaultStore = defineStore('localVault', () => {
     if (savedActive && vaults.value.find((v) => v.id === savedActive)) {
       activeVaultId.value = savedActive
     }
+    
+    initialized.value = true
   }
 
   /** 添加本地 Vault（弹出目录选择器） */
@@ -78,8 +86,17 @@ export const useLocalVaultStore = defineStore('localVault', () => {
     const handle = await pickDirectory()
     if (!handle) return null
 
-    const id = `local-${Date.now()}`
     const vaultName = name || handle.name
+
+    // 检查是否已存在相同名称的 vault
+    const existingVault = vaults.value.find((v) => v.name === vaultName)
+    if (existingVault) {
+      // 如果已存在，直接切换到该 vault
+      await switchVault(existingVault.id)
+      return existingVault
+    }
+
+    const id = `local-${Date.now()}`
 
     const info: LocalVaultInfo = {
       id,
@@ -151,11 +168,35 @@ export const useLocalVaultStore = defineStore('localVault', () => {
     error.value = null
     try {
       notes.value = await listMarkdownFiles(activeVault.value.handle)
+      loadNotesPreview()
     } catch (err: any) {
       error.value = `加载笔记失败: ${err.message}`
       notes.value = []
     } finally {
       loading.value = false
+    }
+  }
+
+  /** 后台加载笔记预览内容 */
+  async function loadNotesPreview() {
+    if (!activeVault.value) return
+
+    const batchSize = 10
+    for (let i = 0; i < notes.value.length; i += batchSize) {
+      const batch = notes.value.slice(i, i + batchSize)
+      await Promise.all(
+        batch.map(async (note) => {
+          try {
+            const preview = await readFilePreview(activeVault.value!.handle, note.path, 5)
+            const idx = notes.value.findIndex((n) => n.path === note.path)
+            if (idx !== -1) {
+              notes.value[idx].preview = preview
+            }
+          } catch {
+            // 忽略读取错误
+          }
+        })
+      )
     }
   }
 

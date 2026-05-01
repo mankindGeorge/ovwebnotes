@@ -4,8 +4,8 @@
     <div class="flex flex-1 overflow-hidden relative">
       <!-- 移动端遮罩 -->
       <div
-        v-if="appStore.sidebarOpen"
-        class="fixed inset-0 bg-black/50 z-20 lg:hidden"
+        v-if="appStore.sidebarOpen && appStore.isMobile"
+        class="fixed inset-0 bg-black/50 z-20 pointer-events-auto"
         @click="appStore.setSidebarOpen(false)"
       />
 

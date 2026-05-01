@@ -38,7 +38,7 @@
           <polyline points="10 9 9 9 8 9" />
         </svg>
         <span class="font-semibold text-lg hidden sm:inline">
-          Obsidian Notes
+          Ovwebnotes
         </span>
       </div>
     </div>

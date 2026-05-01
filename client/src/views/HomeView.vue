@@ -50,9 +50,6 @@
 
     <!-- 正常内容区 -->
     <template v-else>
-      <!-- 笔记列表 -->
-      <NoteList :loading="loading" />
-
       <!-- 编辑区 -->
       <div class="flex-1 overflow-hidden">
         <NoteEditor
@@ -99,14 +96,13 @@ import { useLocalVaultStore } from '@/stores/localVault'
 import { getNoteIdentifier } from '@/api/notes'
 import type { Note, UpdateNoteDTO } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
-import NoteList from '@/components/notes/NoteList.vue'
 import NoteEditor from '@/components/notes/NoteEditor.vue'
 
 const notesStore = useNotesStore()
 const appStore = useAppStore()
 const localVaultStore = useLocalVaultStore()
 
-const { currentNote, loading } = storeToRefs(notesStore)
+const { currentNote } = storeToRefs(notesStore)
 
 const editorContent = ref('')
 let saveTimer: ReturnType<typeof setTimeout> | null = null
@@ -170,8 +166,20 @@ watch(
       await flushSave(oldNote, editorContent.value)
     }
     if (newNote) {
-      editorContent.value = newNote.content
-      lastSavedContent = newNote.content
+      // 本地模式下，如果内容为空或只有预览，加载完整内容
+      if (isLocalMode() && (!newNote.content || newNote.content.length < 500)) {
+        try {
+          const fullContent = await localVaultStore.readNote(newNote.filePath)
+          editorContent.value = fullContent
+          lastSavedContent = fullContent
+        } catch {
+          editorContent.value = newNote.content || ''
+          lastSavedContent = newNote.content || ''
+        }
+      } else {
+        editorContent.value = newNote.content
+        lastSavedContent = newNote.content
+      }
     } else {
       editorContent.value = ''
       lastSavedContent = ''
@@ -247,7 +255,7 @@ async function loadLocalNotes() {
   const localNotes: Note[] = localVaultStore.notes.map((ln) => ({
     id: ln.path,
     title: ln.name.replace(/\.md$/, ''),
-    content: ln.content,
+    content: ln.preview || ln.content || '',
     tags: [],
     is_cloud: false,
     folderPath: ln.path.includes('/') ? '/' + ln.path.substring(0, ln.path.lastIndexOf('/')) : '/',
@@ -280,9 +288,6 @@ async function handleReconnect() {
 }
 
 onMounted(async () => {
-  // 初始化本地 Vault
-  await localVaultStore.init()
-
   if (isLocalMode()) {
     // 本地模式
     if (localVaultStore.isConnected) {

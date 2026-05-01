@@ -12,6 +12,7 @@ export interface LocalNote {
   name: string        // 文件名，如 "笔记.md"
   path: string        // 相对路径，如 "folder/笔记.md"
   content: string
+  preview?: string    // 前5行预览内容
   lastModified: number
 }
 
@@ -47,7 +48,7 @@ export async function verifyPermission(
   }
 }
 
-/** 递归列出目录下所有 .md 文件 */
+/** 递归列出目录下所有 .md 文件（只加载元数据，不加载内容） */
 export async function listMarkdownFiles(
   dirHandle: FileSystemDirectoryHandle,
   basePath: string = ''
@@ -60,11 +61,10 @@ export async function listMarkdownFiles(
     if (entry.kind === 'file' && entry.name.endsWith('.md')) {
       try {
         const file = await (entry as FileSystemFileHandle).getFile()
-        const content = await file.text()
         notes.push({
           name: entry.name,
           path: entryPath,
-          content,
+          content: '',
           lastModified: file.lastModified,
         })
       } catch {
@@ -102,6 +102,17 @@ export async function readFile(
   const fileHandle = await currentHandle.getFileHandle(fileName)
   const file = await fileHandle.getFile()
   return file.text()
+}
+
+/** 读取文件前N行内容（用于预览） */
+export async function readFilePreview(
+  dirHandle: FileSystemDirectoryHandle,
+  filePath: string,
+  lines: number = 5
+): Promise<string> {
+  const content = await readFile(dirHandle, filePath)
+  const contentLines = content.split('\n').slice(0, lines)
+  return contentLines.join('\n')
 }
 
 /** 写入文件内容（自动创建目录） */
