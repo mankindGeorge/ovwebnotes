@@ -1,8 +1,8 @@
 <template>
   <aside
     :class="[
-      'w-64 flex-shrink-0 border-r border-gray-200 dark:border-vault-border bg-gray-50 dark:bg-vault-surface transition-all duration-300 overflow-y-auto',
-      appStore.sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-0 lg:border-0 lg:overflow-hidden',
+      'w-64 border-r border-gray-200 dark:border-vault-border bg-gray-50 dark:bg-vault-surface transition-all duration-300 overflow-y-auto',
+      appStore.sidebarOpen ? 'flex-shrink-0 translate-x-0' : 'flex-shrink-0 -translate-x-full lg:hidden',
     ]"
   >
     <div class="p-4">
