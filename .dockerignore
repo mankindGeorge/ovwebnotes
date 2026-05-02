@@ -1,5 +1,8 @@
+# Ignore local build artefacts – the inner docker-compose build recreates them
 node_modules
 dist
 .git
-*.md
 .env
+
+# Keep everything else (server/, client/, docker-compose.yml, etc.)
+# so the inner docker-compose build has full source context.
