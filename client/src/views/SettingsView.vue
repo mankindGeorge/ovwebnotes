@@ -1,28 +1,26 @@
 <template>
   <AppLayout>
-    <div class="flex-1 overflow-y-auto p-6 max-w-3xl mx-auto relative">
-      <!-- 装饰性渐变 -->
+    <div class="flex-1 overflow-y-auto p-3 sm:p-6 max-w-3xl mx-auto relative">
       <div class="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-warm-surface/50 to-transparent dark:from-vault-surface/30 dark:to-transparent pointer-events-none"></div>
       
-      <h1 class="text-2xl font-bold text-warm-text dark:text-vault-text mb-6 relative z-10">
+      <h1 class="text-xl sm:text-2xl font-bold text-warm-text dark:text-vault-text mb-4 sm:mb-6 relative z-10">
         设置
       </h1>
 
-      <!-- 外观设置 -->
-      <section class="mb-8">
-        <h2 class="text-lg font-semibold text-warm-text dark:text-vault-text mb-4">外观</h2>
-        <div class="space-y-4">
-          <div class="flex items-center justify-between p-4 rounded-lg bg-warm-surface/80 dark:bg-vault-surface/80 backdrop-blur-sm border border-warm-border-light/50 dark:border-vault-border/50 shadow-sm hover:shadow-md transition-all duration-200">
+      <section class="mb-6 sm:mb-8">
+        <h2 class="text-base sm:text-lg font-semibold text-warm-text dark:text-vault-text mb-3 sm:mb-4">外观</h2>
+        <div class="space-y-3 sm:space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-lg bg-warm-surface/80 dark:bg-vault-surface/80 backdrop-blur-sm border border-warm-border-light/50 dark:border-vault-border/50 shadow-sm hover:shadow-md transition-all duration-200 gap-3">
             <div>
               <p class="text-sm font-medium text-warm-text dark:text-vault-text">主题模式</p>
               <p class="text-xs text-warm-text-muted dark:text-vault-muted">选择应用的配色方案</p>
             </div>
-            <div class="flex items-center gap-1 bg-warm-hover dark:bg-vault-highlight rounded-lg p-1">
+            <div class="flex items-center gap-1 bg-warm-hover dark:bg-vault-highlight rounded-lg p-1 self-end sm:self-auto">
               <button
                 v-for="mode in themeModes"
                 :key="mode.value"
                 :class="[
-                  'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                  'px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                   appStore.themeMode === mode.value
                     ? 'bg-warm-card dark:bg-vault-surface text-warm-text dark:text-vault-text shadow-sm'
                     : 'text-warm-text-muted dark:text-vault-muted hover:text-warm-text dark:hover:text-vault-text',

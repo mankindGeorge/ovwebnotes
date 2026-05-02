@@ -48,6 +48,14 @@ export const useAppStore = defineStore('app', () => {
       : false
   )
 
+  function checkMobile() {
+    isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      ('ontouchstart' in window && window.innerWidth < 1024)
+    if (isMobile.value) {
+      sidebarOpen.value = false
+    }
+  }
+
   // Getters
   const isDark = computed(() => {
     if (themeMode.value === 'dark') return true
@@ -116,19 +124,19 @@ export const useAppStore = defineStore('app', () => {
           applyTheme()
         }
       })
+    
+    window.addEventListener('resize', checkMobile)
+    checkMobile()
   }
 
   return {
-    // State
     themeMode,
     sidebarOpen,
     storageMode,
     isMobile,
     allowEditRepositoryNotes,
-    // Getters
     isDark,
     isCloudMode,
-    // Actions
     setThemeMode,
     toggleTheme,
     applyTheme,
@@ -137,5 +145,6 @@ export const useAppStore = defineStore('app', () => {
     setStorageMode,
     toggleStorageMode,
     setAllowEditRepositoryNotes,
+    checkMobile,
   }
 })

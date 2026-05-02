@@ -222,9 +222,13 @@ export class RepositoriesService {
   async remove(id: string) {
     const repo = await this.findOne(id);
 
+    await this.prisma.note.deleteMany({
+      where: { repositoryId: id },
+    });
+    this.logger.log(`Deleted all notes for repository: ${id}`);
+
     const repoPath = path.join(this.repositoriesPath, repo.folder);
     try {
-      // 检查文件夹是否存在
       const exists = await fs.access(repoPath).then(() => true).catch(() => false);
       if (exists) {
         await fs.rmdir(repoPath, { recursive: true });
@@ -286,7 +290,6 @@ export class RepositoriesService {
 
   private async syncNotesFromRepository(repositoryId: string, repoPath: string) {
     try {
-      // 获取仓库信息以获取名称
       const repository = await this.prisma.remoteRepository.findUnique({
         where: { id: repositoryId },
       });
@@ -296,22 +299,70 @@ export class RepositoriesService {
         return;
       }
 
+      // 先复制图片和其他文件到 uploads 目录
+      const uploadsPath = path.resolve('./uploads');
+      await fs.mkdir(uploadsPath, { recursive: true });
+      
+      const imageFiles = await this.findImageFiles(repoPath);
+      const imagePathMap = new Map<string, string>();
+      
+      for (const imagePath of imageFiles) {
+        try {
+          const relativePath = path.relative(repoPath, imagePath);
+          const fileName = `${repository.name}-${relativePath.replace(/\//g, '-')}`;
+          const destPath = path.join(uploadsPath, fileName);
+          
+          await fs.copyFile(imagePath, destPath);
+          
+          const newPath = `/uploads/${fileName}`;
+          
+          // 记录多种路径映射格式以匹配不同的引用方式
+          imagePathMap.set(relativePath, newPath);
+          imagePathMap.set(path.basename(imagePath), newPath);
+          
+          // 对于 assets/xxx 格式的引用，也添加映射
+          const assetsMatch = relativePath.match(/assets\/(.+)$/);
+          if (assetsMatch) {
+            imagePathMap.set(`assets/${assetsMatch[1]}`, newPath);
+          }
+          
+          this.logger.log(`Copied image: ${relativePath} -> ${newPath}`);
+        } catch (error) {
+          this.logger.error(`Failed to copy image ${imagePath}: ${error}`);
+        }
+      }
+
       // 递归查找所有markdown文件
       const mdFiles = await this.findMarkdownFiles(repoPath);
       
       let importedCount = 0;
       for (const filePath of mdFiles) {
         try {
-          // 读取文件内容
-          const content = await fs.readFile(filePath, 'utf-8');
+          let content = await fs.readFile(filePath, 'utf-8');
           const relativePath = path.relative(repoPath, filePath);
           const title = path.basename(filePath, '.md');
           
-          // 构建云端文件夹路径：/仓库名/相对路径的目录
+          // 更新 markdown 中的图片引用路径
+          for (const [originalPath, newPath] of imagePathMap) {
+            // 匹配各种图片引用格式
+            content = content.replace(
+              new RegExp(`!\\[([^\\]]*)\\]\\(${this.escapeRegex(originalPath)}\\)`, 'g'),
+              `![$1](${newPath})`
+            );
+            content = content.replace(
+              new RegExp(`!\\[([^\\]]*)\\]\\(${this.escapeRegex(path.basename(originalPath))}\\)`, 'g'),
+              `![$1](${newPath})`
+            );
+            // 匹配 HTML img 标签
+            content = content.replace(
+              new RegExp(`<img([^>]*)src=["']${this.escapeRegex(originalPath)}["']`, 'gi'),
+              `<img$1src="${newPath}"`
+            );
+          }
+          
           const cloudFolderPath = '/' + repository.name + '/' + (path.dirname(relativePath) || '/');
           const cloudFilePath = '/' + repository.name + '/' + relativePath;
           
-          // 检查是否已存在
           const existing = await this.prisma.note.findFirst({
             where: {
               repositoryId,
@@ -320,18 +371,17 @@ export class RepositoriesService {
           });
 
           if (existing) {
-            // 更新现有笔记
             await this.prisma.note.update({
               where: { id: existing.id },
               data: {
                 content,
                 title,
                 folderPath: cloudFolderPath,
+                isFromRepository: true,
                 updatedAt: new Date(),
               },
             });
           } else {
-            // 创建新笔记
             await this.prisma.note.create({
               data: {
                 title,
@@ -355,6 +405,37 @@ export class RepositoriesService {
     } catch (error) {
       this.logger.error(`Failed to sync notes from repository: ${error}`);
     }
+  }
+
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private async findImageFiles(dir: string): Promise<string[]> {
+    const files: string[] = [];
+    const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.bmp', '.ico'];
+    
+    async function scan(currentDir: string) {
+      const entries = await fs.readdir(currentDir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(currentDir, entry.name);
+        
+        if (entry.name === '.git') continue;
+        
+        if (entry.isDirectory()) {
+          await scan(fullPath);
+        } else if (entry.isFile()) {
+          const ext = path.extname(entry.name).toLowerCase();
+          if (imageExtensions.includes(ext)) {
+            files.push(fullPath);
+          }
+        }
+      }
+    }
+    
+    await scan(dir);
+    return files;
   }
 
   private async findMarkdownFiles(dir: string): Promise<string[]> {

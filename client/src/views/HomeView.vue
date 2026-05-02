@@ -51,7 +51,7 @@
     <!-- 正常内容区 -->
     <template v-else>
       <!-- 编辑区 -->
-      <div class="flex-1 overflow-hidden">
+      <div class="flex-1 h-full w-full overflow-hidden">
         <NoteEditor
           v-if="currentNote"
           :key="getNoteKey(currentNote)"
@@ -59,14 +59,14 @@
           :note-title="currentNote.title"
           :title-editable="canEditNote"
           :readonly="!canEditNote"
-          :show-delete-button="true"
+          :show-delete-button="!currentNote.isFromRepository"
           @update:note-title="handleTitleUpdate"
           @delete="handleDeleteNote"
           @navigate="handleNavigate"
         />
         <div
           v-else
-          class="h-full flex items-center justify-center text-warm-text-muted dark:text-vault-muted"
+          class="h-full w-full flex items-center justify-center text-warm-text-muted dark:text-vault-muted"
         >
           <div class="text-center">
             <svg

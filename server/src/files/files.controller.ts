@@ -44,20 +44,56 @@ const multerOptions = {
   },
   fileFilter: (_req: Request, file: Express.Multer.File, cb: (error: Error | null, acceptFile: boolean) => void) => {
     const allowedMimes = [
+      // 图片
       'image/png',
       'image/jpeg',
       'image/gif',
       'image/svg+xml',
       'image/webp',
+      'image/bmp',
+      'image/tiff',
+      'image/x-icon',
+      // 文档
       'text/markdown',
       'text/plain',
       'application/pdf',
       'application/json',
-      'application/octet-stream',
       'text/html',
       'text/css',
       'application/javascript',
+      'text/csv',
+      'application/xml',
+      'text/xml',
+      // Office 文档
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      // 压缩文件
       'application/zip',
+      'application/x-rar-compressed',
+      'application/x-7z-compressed',
+      'application/x-tar',
+      'application/gzip',
+      // 音频
+      'audio/mpeg',
+      'audio/wav',
+      'audio/ogg',
+      'audio/aac',
+      'audio/flac',
+      // 视频
+      'video/mp4',
+      'video/webm',
+      'video/ogg',
+      'video/x-msvideo',
+      'video/quicktime',
+      // 代码
+      'application/x-python',
+      'application/x-sh',
+      // 其他
+      'application/octet-stream',
     ];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);

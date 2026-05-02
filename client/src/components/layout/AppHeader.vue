@@ -1,9 +1,8 @@
 <template>
   <header
-    class="h-14 flex items-center justify-between px-4 border-b border-warm-border dark:border-vault-border bg-warm-card/95 dark:bg-vault-surface/95 backdrop-blur-sm relative z-20"
+    class="h-14 flex items-center justify-between px-2 sm:px-4 border-b border-warm-border dark:border-vault-border bg-warm-card/95 dark:bg-vault-surface/95 backdrop-blur-sm relative z-20"
   >
-    <!-- 左侧: 菜单按钮 + Logo -->
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 sm:gap-3">
       <button
         class="p-1.5 rounded-lg hover:bg-warm-hover dark:hover:bg-vault-highlight transition-colors"
         @click="appStore.toggleSidebar"
@@ -37,19 +36,17 @@
           <line x1="16" y1="17" x2="8" y2="17" />
           <polyline points="10 9 9 9 8 9" />
         </svg>
-        <span class="font-semibold text-lg hidden sm:inline">
+        <span class="font-semibold text-base sm:text-lg hidden sm:inline">
           Ovwebnotes
         </span>
       </div>
     </div>
 
-    <!-- 中间: 搜索栏 -->
-    <div class="flex-1 max-w-md mx-4">
+    <div class="flex-1 max-w-md mx-2 sm:mx-4 hidden md:block">
       <SearchBar />
     </div>
 
-    <!-- 右侧: 工具栏 -->
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-1 sm:gap-2">
       <StorageToggle />
       <ThemeToggle />
       <button

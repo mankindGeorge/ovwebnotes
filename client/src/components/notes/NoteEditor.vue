@@ -1,19 +1,18 @@
 <template>
   <div class="flex flex-col h-full">
-    <!-- 编辑器工具栏 -->
     <div
       v-if="!readonly"
-      class="flex items-center justify-between px-4 py-2 border-b border-warm-border dark:border-vault-border"
+      class="flex items-center justify-between px-2 sm:px-4 py-2 border-b border-warm-border dark:border-vault-border"
     >
       <input
         v-if="titleEditable"
         v-model="noteTitle"
-        class="text-lg font-semibold bg-transparent border-none outline-none text-warm-text dark:text-vault-text flex-1"
+        class="text-base sm:text-lg font-semibold bg-transparent border-none outline-none text-warm-text dark:text-vault-text flex-1 min-w-0"
         placeholder="输入标题..."
         @blur="handleTitleBlur"
         @keydown.enter="handleTitleBlur"
       />
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
         <button
           v-if="showDeleteButton"
           class="p-1.5 rounded-lg text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
@@ -28,15 +27,13 @@
       </div>
     </div>
 
-    <!-- Vditor 编辑器容器 -->
     <div ref="vditorRef" class="flex-1 overflow-hidden" />
 
-    <!-- 空状态 -->
     <div
       v-if="!modelValue && readonly"
       class="flex-1 flex items-center justify-center text-warm-text-muted dark:text-vault-muted"
     >
-      <div class="text-center">
+      <div class="text-center px-4">
         <svg class="w-16 h-16 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
         </svg>
@@ -103,48 +100,64 @@ function initVditor() {
   if (!vditorRef.value || vditorInstance) return
 
   const isDark = appStore.isDark
+  const isMobileView = appStore.isMobile
+
+  const mobileToolbar = [
+    'headings',
+    'bold',
+    'italic',
+    '|',
+    'list',
+    'code',
+    'link',
+    '|',
+    'undo',
+    'redo',
+  ]
+
+  const desktopToolbar = [
+    'headings',
+    'bold',
+    'italic',
+    'strike',
+    '|',
+    'line',
+    'quote',
+    'list',
+    'ordered-list',
+    'check',
+    '|',
+    'code',
+    'inline-code',
+    'table',
+    'link',
+    'upload',
+    '|',
+    'undo',
+    'redo',
+    '|',
+    'edit-mode',
+    'outline',
+    'preview',
+    {
+      name: 'more',
+      toolbar: [
+        'both',
+        'code-theme',
+        'content-theme',
+        'export',
+        'fullscreen',
+      ],
+    },
+  ]
 
   vditorInstance = new Vditor(vditorRef.value, {
     height: '100%',
-    mode: 'wysiwyg',
+    mode: isMobileView ? 'wysiwyg' : 'wysiwyg',
     theme: isDark ? 'dark' : 'classic',
     icon: 'ant',
     customWysiwygToolbar: () => {},
-    toolbar: [
-      'headings',
-      'bold',
-      'italic',
-      'strike',
-      '|',
-      'line',
-      'quote',
-      'list',
-      'ordered-list',
-      'check',
-      '|',
-      'code',
-      'inline-code',
-      'table',
-      'link',
-      'upload',
-      '|',
-      'undo',
-      'redo',
-      '|',
-      'edit-mode',
-      'outline',
-      'preview',
-      {
-        name: 'more',
-        toolbar: [
-          'both',
-          'code-theme',
-          'content-theme',
-          'export',
-          'fullscreen',
-        ],
-      },
-    ],
+    toolbar: isMobileView ? mobileToolbar : desktopToolbar,
     toolbarConfig: {
       pin: true,
       hide: props.readonly,
@@ -332,5 +345,22 @@ onBeforeUnmount(() => {
 .dark .vditor-reset mark {
   background-color: #92400e;
   color: #fef3c7;
+}
+
+@media (max-width: 768px) {
+  .vditor-toolbar {
+    padding: 2px 4px !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .vditor-toolbar__item {
+    padding: 4px 6px !important;
+  }
+  
+  .vditor-reset {
+    padding: 12px !important;
+    font-size: 15px !important;
+  }
 }
 </style>

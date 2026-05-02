@@ -1,8 +1,11 @@
 <template>
   <aside
+    v-if="appStore.isMobile ? appStore.sidebarOpen : true"
     :class="[
-      'w-64 border-r border-warm-border dark:border-vault-border bg-warm-surface/95 dark:bg-vault-surface/95 backdrop-blur-sm transition-all duration-300 overflow-y-auto relative',
-      appStore.sidebarOpen ? 'flex-shrink-0 translate-x-0' : 'flex-shrink-0 -translate-x-full lg:hidden',
+      'bg-warm-surface/95 dark:bg-vault-surface/95 backdrop-blur-sm transition-all duration-300 overflow-y-auto relative',
+      appStore.isMobile
+        ? 'fixed inset-y-0 left-0 z-30 w-72 border-r border-warm-border dark:border-vault-border'
+        : 'w-64 flex-shrink-0 border-r border-warm-border dark:border-vault-border',
     ]"
   >
     <div class="p-4 relative z-10">
@@ -82,6 +85,26 @@
         </div>
       </div>
 
+      <!-- 上传文件列表 -->
+      <div v-if="uploadedFiles.length > 0" class="mt-6">
+        <div class="text-xs font-semibold text-warm-text-muted dark:text-vault-muted uppercase tracking-wider mb-2">
+          上传的文件
+        </div>
+        <div class="space-y-1 max-h-40 overflow-y-auto">
+          <div
+            v-for="file in uploadedFiles"
+            :key="file.path"
+            class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-warm-hover dark:hover:bg-vault-surface cursor-pointer text-sm text-warm-text dark:text-vault-text"
+            @click="handleFilePreview(file)"
+          >
+            <svg class="w-4 h-4 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span class="truncate">{{ file.name }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- 数据同步区域 -->
       <div class="mt-6">
         <div class="text-xs font-semibold text-warm-text-muted dark:text-vault-muted uppercase tracking-wider mb-2">
@@ -115,7 +138,7 @@
                 <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                上传文件到云端
+                上传文件
               </button>
               <button
                 class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-warm-text dark:text-vault-text hover:bg-warm-hover dark:hover:bg-vault-highlight transition-colors text-left border-t border-warm-border-light dark:border-vault-border"
@@ -138,7 +161,7 @@
             </div>
           </div>
           <!-- 隐藏的文件选择器 -->
-          <input ref="uploadFileInput" type="file" accept=".md,.markdown" multiple class="hidden" @change="handleFileUpload" />
+          <input ref="uploadFileInput" type="file" accept=".md,.markdown,.txt,.json,.xml,.csv,.html,.css,.js,.ts,.py,.vue,.jsx,.tsx,.png,.jpg,.jpeg,.gif,.svg,.webp,.bmp,.ico,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z,.tar,.gz,.mp3,.wav,.ogg,.aac,.flac,.mp4,.webm,.avi,.mov" multiple class="hidden" @change="handleFileUpload" />
           <input ref="uploadFolderInput" type="file" accept=".md,.markdown" multiple class="hidden" webkitdirectory @change="handleFolderUpload" />
           <p v-if="syncMessage" class="text-xs px-1" :class="syncSuccess ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
             {{ syncMessage }}
@@ -245,7 +268,7 @@ const expandedFolders = ref(new Set<string>())
 const selectedFile = ref<string | undefined>()
 const showFolderModal = ref(false)
 const newFolderName = ref('')
-
+const uploadedFiles = ref<Array<{ name: string; path: string; type: string }>>([])
 
 // 从笔记中提取文件夹结构
 const localSubDirs = ref<string[]>([])
@@ -759,6 +782,13 @@ async function handleFileUpload(event: Event) {
             folderPath,
             filePath: uploadResult.filePath,
           })
+        } else {
+          // 非 Markdown 文件，添加到上传文件列表
+          uploadedFiles.value.push({
+            name: file.name,
+            path: uploadResult.filePath,
+            type: file.type,
+          })
         }
         
         successCount++
@@ -897,5 +927,13 @@ async function handleDownloadNote() {
   }
 }
 
-
+/** 处理文件预览 */
+function handleFilePreview(file: { name: string; path: string; type: string }) {
+  // 构建文件 URL
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
+  const fileUrl = `${baseUrl}/api/files/${encodeURIComponent(file.path)}`
+  
+  // 打开新窗口预览文件
+  window.open(fileUrl, '_blank')
+}
 </script>
