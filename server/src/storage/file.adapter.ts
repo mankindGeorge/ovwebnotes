@@ -39,6 +39,18 @@ export class FileAdapter {
   }
 
   /**
+   * 检查文件是否存在
+   */
+  private async fileExists(filePath: string): Promise<boolean> {
+    try {
+      await fs.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * 创建笔记文件
    */
   async createNote(data: {
@@ -48,16 +60,23 @@ export class FileAdapter {
     folderPath: string;
   }): Promise<FileNote> {
     const { title, content, tags, folderPath } = data;
-    const fileName = `${title}.md`;
-    // 移除 folderPath 开头的 / 防止 path.join 产生绝对路径
     const cleanFolder = folderPath.replace(/^\/+/, '');
-    const relativePath = cleanFolder ? path.join(cleanFolder, fileName) : fileName;
-    const fullPath = path.join(this.vaultPath, relativePath);
+    
+    const baseFileName = `${title}.md`;
+    let fileName = baseFileName;
+    let relativePath = cleanFolder ? path.join(cleanFolder, fileName) : fileName;
+    let fullPath = path.join(this.vaultPath, relativePath);
+    
+    let counter = 1;
+    while (await this.fileExists(fullPath)) {
+      fileName = `${title}-${counter}.md`;
+      relativePath = cleanFolder ? path.join(cleanFolder, fileName) : fileName;
+      fullPath = path.join(this.vaultPath, relativePath);
+      counter++;
+    }
 
-    // 确保目录存在
     await fs.mkdir(path.dirname(fullPath), { recursive: true });
 
-    // 写入文件，前置 YAML frontmatter
     const frontmatter = this.buildFrontmatter(title, tags);
     const fileContent = `${frontmatter}\n${content}`;
     await fs.writeFile(fullPath, fileContent, 'utf-8');

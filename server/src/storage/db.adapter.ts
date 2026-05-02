@@ -31,6 +31,15 @@ export class DbAdapter {
     folderPath: string;
     filePath: string;
   }): Promise<DbNote> {
+    let filePath = data.filePath;
+    let counter = 1;
+    
+    while (await this.filePathExists(filePath)) {
+      const baseName = data.filePath.replace(/\.md$/, '');
+      filePath = `${baseName}-${counter}.md`;
+      counter++;
+    }
+    
     const note = await this.prisma.note.create({
       data: {
         title: data.title,
@@ -38,10 +47,20 @@ export class DbAdapter {
         tags: data.tags,
         is_cloud: true,
         folderPath: data.folderPath,
-        filePath: data.filePath,
+        filePath,
       },
     });
     return this.toDbNote(note);
+  }
+
+  /**
+   * 检查filePath是否已存在
+   */
+  private async filePathExists(filePath: string): Promise<boolean> {
+    const count = await this.prisma.note.count({
+      where: { filePath },
+    });
+    return count > 0;
   }
 
   /**
