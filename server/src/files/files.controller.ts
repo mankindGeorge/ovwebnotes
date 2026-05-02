@@ -43,7 +43,6 @@ const multerOptions = {
     fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10), // 10MB
   },
   fileFilter: (_req: Request, file: Express.Multer.File, cb: (error: Error | null, acceptFile: boolean) => void) => {
-    // 允许的文件类型
     const allowedMimes = [
       'image/png',
       'image/jpeg',
@@ -54,6 +53,11 @@ const multerOptions = {
       'text/plain',
       'application/pdf',
       'application/json',
+      'application/octet-stream',
+      'text/html',
+      'text/css',
+      'application/javascript',
+      'application/zip',
     ];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);

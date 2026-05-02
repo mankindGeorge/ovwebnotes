@@ -7,6 +7,8 @@ CREATE TABLE "notes" (
     "is_cloud" BOOLEAN NOT NULL DEFAULT false,
     "folderPath" TEXT NOT NULL DEFAULT '',
     "filePath" TEXT NOT NULL DEFAULT '',
+    "repositoryId" TEXT,
+    "isFromRepository" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -37,6 +39,21 @@ CREATE TABLE "sync_logs" (
     CONSTRAINT "sync_logs_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "remote_repositories" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "branch" TEXT NOT NULL DEFAULT 'main',
+    "folder" TEXT NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT false,
+    "lastSync" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "remote_repositories_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE INDEX "notes_is_cloud_idx" ON "notes"("is_cloud");
 
@@ -44,7 +61,16 @@ CREATE INDEX "notes_is_cloud_idx" ON "notes"("is_cloud");
 CREATE INDEX "notes_folderPath_idx" ON "notes"("folderPath");
 
 -- CreateIndex
+CREATE INDEX "notes_repositoryId_idx" ON "notes"("repositoryId");
+
+-- CreateIndex
 CREATE INDEX "attachments_noteId_idx" ON "attachments"("noteId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "remote_repositories_folder_key" ON "remote_repositories"("folder");
 
 -- AddForeignKey
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_noteId_fkey" FOREIGN KEY ("noteId") REFERENCES "notes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "notes" ADD CONSTRAINT "notes_repositoryId_fkey" FOREIGN KEY ("repositoryId") REFERENCES "remote_repositories"("id") ON DELETE SET NULL ON UPDATE CASCADE;

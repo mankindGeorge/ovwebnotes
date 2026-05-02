@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { simpleGit, SimpleGit, StatusResult } from 'simple-git';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -17,14 +17,23 @@ export interface GitStatus {
 const TOKEN_FILE = '.git-token';
 
 @Injectable()
-export class GitService {
+export class GitService implements OnModuleInit {
   private readonly logger = new Logger(GitService.name);
-  private git: SimpleGit;
+  private git!: SimpleGit;
   private _vaultPath: string;
 
   constructor() {
     this._vaultPath = path.resolve(process.env.VAULT_PATH || './vaults');
-    this.git = simpleGit(this._vaultPath);
+  }
+
+  async onModuleInit() {
+    try {
+      await fs.mkdir(this._vaultPath, { recursive: true });
+      this.git = simpleGit(this._vaultPath);
+      this.logger.log(`GitService initialized with vault path: ${this._vaultPath}`);
+    } catch (error) {
+      this.logger.error(`Failed to initialize GitService: ${error}`);
+    }
   }
 
   /** 获取当前 vault 路径 */
