@@ -11,3 +11,5 @@ server/vaults/
 Thumbs.db
 
 *.local
+
+.trae/
