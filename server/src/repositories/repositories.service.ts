@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '../common/prisma/prisma.service';
 import { simpleGit, SimpleGit } from 'simple-git';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -9,10 +9,8 @@ import { CreateRepositoryDto, UpdateRepositoryDto } from './dto/create-repositor
 export class RepositoriesService {
   private readonly logger = new Logger(RepositoriesService.name);
   private readonly repositoriesPath = path.resolve('./repositories');
-  private readonly prisma: PrismaClient;
 
-  constructor() {
-    this.prisma = new PrismaClient();
+  constructor(private readonly prisma: PrismaService) {
     this.ensureRepositoriesDir();
   }
 

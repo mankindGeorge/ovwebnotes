@@ -3,6 +3,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { PrismaModule } from './common/prisma/prisma.module';
 import { StorageModule } from './storage/storage.module';
 import { NotesModule } from './notes/notes.module';
 import { FilesModule } from './files/files.module';
@@ -14,6 +15,7 @@ import { RepositoriesModule } from './repositories/repositories.module';
 
 @Module({
   imports: [
+    PrismaModule,
     // 静态文件服务 - uploads 目录
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),

@@ -62,6 +62,7 @@
           @select="handleFileSelect"
           @toggle="handleFolderToggle"
           @move="handleFileMove"
+          @delete="handleFileDelete"
         />
       </div>
 
@@ -277,11 +278,13 @@ async function loadLocalSubDirs() {
 const fileTreeItems = computed((): FileTreeItem[] => {
   const tree: FileTreeItem[] = []
   const folderMap = new Map<string, FileTreeItem>()
+  const repositoryFolders = new Set<string>()
 
   notesStore.notes.forEach((note) => {
     const filePath = note.filePath || note.id
     const fileName = note.title || '未命名笔记'
     const folderPath = note.folderPath || '/'
+    const isFromRepo = note.isFromRepository
     
     if (folderPath === '/' || !folderPath) {
       tree.push({
@@ -290,6 +293,7 @@ const fileTreeItems = computed((): FileTreeItem[] => {
         type: 'file',
         preview: note.content && note.content.length < 100 ? note.content.substring(0, 50) : undefined,
         is_cloud: note.is_cloud,
+        isRepository: isFromRepo,
       })
     } else {
       const cleanFolderPath = folderPath.startsWith('/') ? folderPath.substring(1) : folderPath
@@ -306,8 +310,13 @@ const fileTreeItems = computed((): FileTreeItem[] => {
             path: currentPath,
             type: 'folder',
             children: [],
+            isRepository: isFromRepo && index === 0,
           }
           folderMap.set(currentPath, folderItem)
+          
+          if (isFromRepo && index === 0) {
+            repositoryFolders.add(currentPath)
+          }
           
           if (index === 0) {
             if (!tree.find(item => item.path === currentPath)) {
@@ -330,6 +339,7 @@ const fileTreeItems = computed((): FileTreeItem[] => {
           type: 'file',
           preview: note.content && note.content.length < 100 ? note.content.substring(0, 50) : undefined,
           is_cloud: note.is_cloud,
+          isRepository: isFromRepo,
         })
       }
     }
@@ -337,6 +347,13 @@ const fileTreeItems = computed((): FileTreeItem[] => {
 
   const sortItems = (items: FileTreeItem[]) => {
     items.sort((a, b) => {
+      // 仓库文件夹置顶
+      if (a.type === 'folder' && b.type === 'folder') {
+        if (a.isRepository !== b.isRepository) {
+          return a.isRepository ? -1 : 1
+        }
+      }
+      // 文件夹优先
       if (a.type !== b.type) {
         return a.type === 'folder' ? -1 : 1
       }
@@ -375,6 +392,27 @@ function handleFolderToggle(path: string) {
 watch(
   () => [localVaultStore.activeVault, appStore.isCloudMode],
   () => { loadLocalSubDirs() },
+  { immediate: true },
+)
+
+// 监听当前笔记变化，更新侧边栏选中状态
+watch(
+  () => notesStore.currentNote,
+  (note) => {
+    if (note) {
+      selectedFile.value = note.filePath || note.id
+      // 展开包含该笔记的文件夹
+      if (note.folderPath && note.folderPath !== '/') {
+        const cleanPath = note.folderPath.startsWith('/') ? note.folderPath.substring(1) : note.folderPath
+        const parts = cleanPath.split('/')
+        let currentPath = ''
+        parts.forEach(part => {
+          currentPath = currentPath ? `${currentPath}/${part}` : part
+          expandedFolders.value.add(currentPath)
+        })
+      }
+    }
+  },
   { immediate: true },
 )
 
@@ -503,6 +541,32 @@ async function handleFileMove(data: { sourcePath: string; targetFolder: string }
   } catch (error: any) {
     console.error('移动文件失败:', error)
     alert(`移动文件失败: ${error.response?.data?.message || error.message}`)
+  }
+}
+
+/** 处理文件删除 */
+async function handleFileDelete(item: import('@/components/common/FileTree.vue').FileTreeItem) {
+  const confirmed = confirm(`确定要删除笔记 "${item.name}" 吗？`)
+  if (!confirmed) return
+  
+  try {
+    if (!appStore.isCloudMode && localVaultStore.isConnected) {
+      // 本地模式：删除文件
+      await localVaultStore.deleteNote(item.path)
+      // 如果删除的是当前笔记，清空选中状态
+      if (notesStore.currentNote?.filePath === item.path) {
+        notesStore.setCurrentNote(null)
+      }
+    } else {
+      // 云端模式：通过 API 删除
+      const note = notesStore.notes.find(n => n.filePath === item.path || n.id === item.path)
+      if (note) {
+        await notesStore.deleteNote(note)
+      }
+    }
+  } catch (error: any) {
+    console.error('删除文件失败:', error)
+    alert(`删除失败: ${error.response?.data?.message || error.message}`)
   }
 }
 

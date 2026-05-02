@@ -59,7 +59,10 @@
           :note-title="currentNote.title"
           :title-editable="canEditNote"
           :readonly="!canEditNote"
+          :show-delete-button="true"
           @update:note-title="handleTitleUpdate"
+          @delete="handleDeleteNote"
+          @navigate="handleNavigate"
         />
         <div
           v-else
@@ -94,7 +97,7 @@ import { storeToRefs } from 'pinia'
 import { useNotesStore } from '@/stores/notes'
 import { useAppStore } from '@/stores/app'
 import { useLocalVaultStore } from '@/stores/localVault'
-import { getNoteIdentifier } from '@/api/notes'
+import { getNoteIdentifier, getNoteById } from '@/api/notes'
 import type { Note, UpdateNoteDTO } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import NoteEditor from '@/components/notes/NoteEditor.vue'
@@ -274,6 +277,68 @@ async function handleTitleUpdate(title: string) {
     }
   } catch {
     // 静默处理
+  }
+}
+
+/** 删除当前笔记 */
+async function handleDeleteNote() {
+  const note = currentNote.value
+  if (!note) return
+  
+  const confirmed = confirm(`确定要删除笔记 "${note.title}" 吗？`)
+  if (!confirmed) return
+  
+  try {
+    if (isLocalMode()) {
+      // 本地模式：删除文件
+      await localVaultStore.deleteNote(note.filePath)
+      notesStore.setCurrentNote(null)
+    } else {
+      // 云端模式：通过 API 删除
+      await notesStore.deleteNote(note)
+    }
+    editorContent.value = ''
+    lastSavedContent = ''
+  } catch (err: any) {
+    alert(`删除失败: ${err.message || '未知错误'}`)
+  }
+}
+
+/** 处理内部链接跳转 */
+async function handleNavigate(path: string) {
+  // 先保存当前笔记
+  if (currentNote.value && editorContent.value !== lastSavedContent) {
+    await flushSave(currentNote.value, editorContent.value)
+  }
+  
+  // 查找目标笔记
+  const targetNote = notesStore.notes.find(n => {
+    // 匹配 filePath 或 id
+    if (n.filePath === path || n.id === path) return true
+    // 匹配相对路径
+    if (n.filePath && n.filePath.endsWith(path)) return true
+    // 匹配标题（去掉 .md 后缀）
+    const title = path.replace(/\.md$/, '')
+    if (n.title === title) return true
+    return false
+  })
+  
+  if (targetNote) {
+    notesStore.setCurrentNote(targetNote)
+  } else {
+    // 如果找不到，尝试从后端加载
+    if (!isLocalMode()) {
+      try {
+        const res = await getNoteById(path, true)
+        if (res.data.data) {
+          notesStore.setCurrentNote(res.data.data)
+        }
+      } catch {
+        alert(`找不到笔记: ${path}`)
+      }
+    } else {
+      alert(`找不到笔记: ${path}`)
+    }
   }
 }
 

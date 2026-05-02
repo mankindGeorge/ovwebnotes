@@ -32,14 +32,14 @@ export class NotesController {
 
   @Get()
   @ApiOperation({ summary: '获取笔记列表' })
-  @ApiQuery({ name: 'is_cloud', required: true, type: Boolean })
+  @ApiQuery({ name: 'is_cloud', required: false, type: Boolean, description: '是否云端笔记，默认true' })
   @ApiQuery({ name: 'tags', required: false, type: String, description: '逗号分隔的标签' })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'folderPath', required: false, type: String })
   @ApiQuery({ name: 'skip', required: false, type: Number })
   @ApiQuery({ name: 'take', required: false, type: Number })
   findAll(
-    @Query('is_cloud', new ParseBoolPipe()) isCloud: boolean,
+    @Query('is_cloud', new DefaultValuePipe(true), ParseBoolPipe) isCloud: boolean,
     @Query('tags') tags?: string,
     @Query('search') search?: string,
     @Query('folderPath') folderPath?: string,

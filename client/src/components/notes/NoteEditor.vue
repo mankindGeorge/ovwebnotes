@@ -14,6 +14,16 @@
         @keydown.enter="handleTitleBlur"
       />
       <div class="flex items-center gap-2">
+        <button
+          v-if="showDeleteButton"
+          class="p-1.5 rounded-lg text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+          title="删除笔记"
+          @click="handleDelete"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
         <SyncButton />
       </div>
     </div>
@@ -49,18 +59,22 @@ const props = withDefaults(
     readonly?: boolean
     titleEditable?: boolean
     noteTitle?: string
+    showDeleteButton?: boolean
   }>(),
   {
     modelValue: '',
     readonly: false,
     titleEditable: false,
     noteTitle: '',
+    showDeleteButton: false,
   }
 )
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
   'update:noteTitle': [value: string]
+  'delete': []
+  'navigate': [path: string]
 }>()
 
 const appStore = useAppStore()
@@ -79,6 +93,10 @@ watch(
 
 function handleTitleBlur() {
   emit('update:noteTitle', noteTitle.value)
+}
+
+function handleDelete() {
+  emit('delete')
 }
 
 function initVditor() {
@@ -129,6 +147,7 @@ function initVditor() {
     ],
     toolbarConfig: {
       pin: true,
+      hide: props.readonly,
     },
     counter: {
       enable: true,
@@ -180,8 +199,48 @@ function initVditor() {
       if (props.modelValue) {
         vditorInstance?.setValue(props.modelValue)
       }
+      // 添加内部链接点击事件
+      setupLinkHandler()
     },
   })
+}
+
+// 处理内部链接点击
+function setupLinkHandler() {
+  if (!vditorRef.value) return
+  
+  // 使用捕获阶段确保在 Vditor 处理之前拦截
+  vditorRef.value.addEventListener('click', handleLinkClick, true)
+}
+
+function handleLinkClick(event: MouseEvent) {
+  const target = event.target as HTMLElement
+  const link = target.closest('a')
+  
+  if (!link) return
+  
+  const href = link.getAttribute('href')
+  if (!href) return
+  
+  // 检查是否是内部 .md 文件链接（排除 http/https 外部链接）
+  if ((href.endsWith('.md') || href.includes('.md#')) && !href.startsWith('http')) {
+    // 阻止所有默认行为
+    event.preventDefault()
+    event.stopPropagation()
+    event.stopImmediatePropagation()
+    
+    // 提取文件路径（去掉 # 锚点）
+    const [path, anchor] = href.split('#')
+    emit('navigate', path)
+    
+    // 如果有锚点，滚动到对应位置
+    if (anchor && vditorInstance) {
+      setTimeout(() => {
+        const element = vditorRef.value?.querySelector(`#${anchor}`)
+        element?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+    }
+  }
 }
 
 let isInternalUpdate = false
@@ -210,20 +269,6 @@ watch(
   }
 )
 
-// 监听只读模式
-watch(
-  () => props.readonly,
-  (readonly) => {
-    if (vditorInstance) {
-      if (readonly) {
-        vditorInstance.disabled()
-      } else {
-        vditorInstance.enable()
-      }
-    }
-  }
-)
-
 onMounted(() => {
   nextTick(() => {
     if (props.modelValue || !props.readonly) {
@@ -234,6 +279,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   vditorReady = false
+  // 移除链接点击事件监听
+  if (vditorRef.value) {
+    vditorRef.value.removeEventListener('click', handleLinkClick)
+  }
   if (vditorInstance) {
     try {
       vditorInstance.destroy()

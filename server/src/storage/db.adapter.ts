@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '../common/prisma/prisma.service';
 
 export interface DbNote {
   id: string;
@@ -11,16 +11,15 @@ export interface DbNote {
   filePath: string;
   createdAt: Date;
   updatedAt: Date;
+  isFromRepository?: boolean;
+  repositoryId?: string | null;
 }
 
 @Injectable()
 export class DbAdapter {
   private readonly logger = new Logger(DbAdapter.name);
-  private readonly prisma: PrismaClient;
 
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * 创建笔记
@@ -175,13 +174,6 @@ export class DbAdapter {
     });
   }
 
-  /**
-   * 关闭数据库连接
-   */
-  async disconnect(): Promise<void> {
-    await this.prisma.$disconnect();
-  }
-
   private toDbNote(note: any): DbNote {
     return {
       id: note.id,
@@ -193,6 +185,8 @@ export class DbAdapter {
       filePath: note.filePath,
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
+      isFromRepository: note.isFromRepository ?? false,
+      repositoryId: note.repositoryId,
     };
   }
 }

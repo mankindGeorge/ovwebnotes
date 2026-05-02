@@ -5,8 +5,20 @@ import type { StorageMode, ThemeMode } from '@/types'
 const THEME_KEY = 'obsidian-notes-theme'
 const SIDEBAR_KEY = 'obsidian-notes-sidebar'
 const STORAGE_KEY = 'obsidian-notes-storage'
+const EDIT_REPO_KEY = 'obsidian-notes-allow-edit-repo'
+const SETTINGS_VERSION_KEY = 'obsidian-notes-settings-version'
+const CURRENT_SETTINGS_VERSION = 2
 
 export const useAppStore = defineStore('app', () => {
+  // 设置迁移：确保旧设置被正确处理
+  const settingsVersion = parseInt(localStorage.getItem(SETTINGS_VERSION_KEY) || '0')
+  if (settingsVersion < 2) {
+    // 版本 1 -> 2: 修复 allowEditRepositoryNotes 默认值逻辑
+    // 强制重置为默认值 false（不允许编辑仓库笔记）
+    localStorage.removeItem(EDIT_REPO_KEY)
+    localStorage.setItem(SETTINGS_VERSION_KEY, String(CURRENT_SETTINGS_VERSION))
+  }
+  
   // State
   const themeMode = ref<ThemeMode>(
     (localStorage.getItem(THEME_KEY) as ThemeMode) || 'system'
@@ -15,12 +27,12 @@ export const useAppStore = defineStore('app', () => {
     localStorage.getItem(SIDEBAR_KEY) === null ? true : localStorage.getItem(SIDEBAR_KEY) !== 'false'
   )
   const storageMode = ref<StorageMode>(
-    (localStorage.getItem(STORAGE_KEY) as StorageMode) || 'vault'
+    (localStorage.getItem(STORAGE_KEY) as StorageMode) || 'cloud'
   )
   
-  // Git仓库编辑限制开关
+  // Git仓库编辑限制开关（默认不允许编辑远程仓库笔记）
   const allowEditRepositoryNotes = ref(
-    localStorage.getItem('obsidian-notes-allow-edit-repo') !== 'false'
+    localStorage.getItem(EDIT_REPO_KEY) === 'true'
   )
   
   const systemDark = ref(
